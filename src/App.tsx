@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MetradosForm } from './components/MetradosForm';
 import { MetradosTable } from './components/MetradosTable';
 import { useMetradosForm } from './hooks/useMetradosForm';
@@ -16,6 +16,13 @@ type User = {
   name: string;
   type: UserType;
   specialty?: string;
+  specialtyId?: number | null;
+};
+
+type Proyecto = {
+  id: number;
+  nombre: string;
+  tipo: 'hospital' | 'contingencia' | string;
 };
 
 const LOGIN_USERS: User[] = [
@@ -49,14 +56,45 @@ function App() {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registerUsername, setRegisterUsername] = useState('');
+  const [registerNombre, setRegisterNombre] = useState('');
+  const [proyectos, setProyectos] = useState<Proyecto[]>([]);
+  const [projectLookup, setProjectLookup] = useState<Record<string, number>>({});
+
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerTipo, setRegisterTipo] = useState<UserType>('especialidad');
+  const [registerEspecialidad, setRegisterEspecialidad] = useState('ESTRUCTURAS');
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
 
   const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
 
 
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const resp = await fetch(`${API_BASE}/api/proyectos`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        setProyectos(data);
+        const lookup: Record<string, number> = {};
+        data.forEach((p: Proyecto) => {
+          lookup[p.tipo] = p.id;
+        });
+        setProjectLookup(lookup);
+      } catch (err) {
+        console.error('No se pudo cargar proyectos', err);
+      }
+    };
+    loadProjects();
+  }, []);
+
   const handleLogin = async () => {
-    if (!selectedUserId) {
-      setLoginError('Seleccione un usuario.');
+    const username = selectedUserId;
+    if (!username) {
+      setLoginError('Seleccione o escriba un usuario.');
       return;
     }
     if (!loginPassword) {
@@ -68,7 +106,7 @@ function App() {
       const response = await fetch(`${API_BASE}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: selectedUserId, password: loginPassword }),
+        body: JSON.stringify({ username, password: loginPassword }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -76,12 +114,13 @@ function App() {
         return;
       }
       const userData = await response.json();
-      const selectedMeta = LOGIN_USERS.find((u) => u.id === selectedUserId);
+      const selectedMeta = LOGIN_USERS.find((u) => u.id === username);
       const user: User = {
         id: userData.id,
         name: userData.nombre || userData.username,
         type: userData.tipo,
         specialty: selectedMeta?.specialty,
+        specialtyId: userData.especialidad_id || null,
       };
       setCurrentUser(user);
       localStorage.setItem('metrados_current_user', JSON.stringify(user));
@@ -89,6 +128,57 @@ function App() {
     } catch (err) {
       console.error(err);
       setLoginError('No se pudo conectar al servidor de login');
+    }
+  };
+
+  const handleRegister = async () => {
+    setRegisterError(null);
+    setRegisterSuccess(null);
+
+    if (!registerUsername || !registerNombre || !registerPassword || !registerTipo) {
+      setRegisterError('Complete todos los campos obligatorios.');
+      return;
+    }
+    if (registerTipo === 'especialidad' && !registerEspecialidad) {
+      setRegisterError('Seleccione una especialidad para usuarios de tipo especialidad.');
+      return;
+    }
+
+    try {
+      const payload: any = {
+        username: registerUsername,
+        nombre: registerNombre,
+        tipo: registerTipo,
+        password: registerPassword,
+        especialidad_id: null,
+        especialidad_nombre: registerTipo === 'especialidad' ? registerEspecialidad : null,
+      };
+
+      const response = await fetch(`${API_BASE}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        setRegisterError(err.error || 'Error al registrar usuario');
+        return;
+      }
+
+      const data = await response.json();
+      setRegisterSuccess('Usuario registrado con éxito. Ahora inicie sesión.');
+      setIsRegistering(false);
+      setSelectedUserId(registerUsername);
+      setLoginPassword('');
+      setRegisterUsername('');
+      setRegisterNombre('');
+      setRegisterPassword('');
+      setRegisterTipo('especialidad');
+      setRegisterEspecialidad('ESTRUCTURAS');
+    } catch (err) {
+      console.error(err);
+      setRegisterError('No se pudo conectar al servidor para registrar');
     }
   };
 
@@ -109,14 +199,15 @@ function App() {
       setTimeout(() => setToast(null), 3000);
 
       try {
+        const proyectoId = projectLookup[context.proyecto] ?? (context.proyecto === 'hospital' ? 1 : 2);
         const resp = await fetch(`${API_BASE}/api/metrados`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...nuevoConProy,
             autor_usuario: currentUser?.id ?? null,
-            proyecto_id: context.proyecto === 'hospital' ? 1 : 2,
-            especialidad_id: null,
+            proyecto_id: proyectoId,
+            especialidad_id: currentUser?.specialtyId ?? null,
           }),
         });
         if (!resp.ok) {
@@ -192,33 +283,105 @@ function App() {
             <UserCircle2 className="w-6 h-6 text-primary" />
             <h2 className="text-xl font-bold">Iniciar sesión</h2>
           </div>
-          <p className="text-sm text-slate-500 mb-4">Selecciona tu usuario (especialidad, jefe de área o residente).</p>
-          <select
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-          >
-            <option value="">-- Seleccione usuario --</option>
-            {LOGIN_USERS.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
-          <input
-            type="password"
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Contraseña"
-            value={loginPassword}
-            onChange={(e) => setLoginPassword(e.target.value)}
-          />
-          {loginError && <div className="text-xs text-red-600 mb-2">{loginError}</div>}
-          <button
-            disabled={!selectedUserId || !loginPassword}
-            onClick={handleLogin}
-            className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg disabled:bg-slate-300"
-          >
-            Entrar
-          </button>
-          <div className="mt-4 text-xs text-slate-500">Usuarios: 8 especialidades + jefes de área + residentes.</div>
+
+          <div className="mb-4 flex gap-2">
+            <button
+              onClick={() => setIsRegistering(false)}
+              className={`flex-1 py-2 rounded-lg font-semibold ${!isRegistering ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+              Iniciar sesión
+            </button>
+            <button
+              onClick={() => setIsRegistering(true)}
+              className={`flex-1 py-2 rounded-lg font-semibold ${isRegistering ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+              Registrar usuario
+            </button>
+          </div>
+
+          {isRegistering ? (
+            <>
+              <p className="text-sm text-slate-500 mb-3">Registre un usuario para crear metrados por especialidad.</p>
+              <input
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
+                placeholder="Usuario (username)"
+                value={registerUsername}
+                onChange={(e) => setRegisterUsername(e.target.value)}
+              />
+              <input
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
+                placeholder="Nombre completo"
+                value={registerNombre}
+                onChange={(e) => setRegisterNombre(e.target.value)}
+              />
+              <input
+                type="password"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
+                placeholder="Contraseña"
+                value={registerPassword}
+                onChange={(e) => setRegisterPassword(e.target.value)}
+              />
+              <select
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
+                value={registerTipo}
+                onChange={(e) => setRegisterTipo(e.target.value as UserType)}
+              >
+                <option value="especialidad">Especialidad</option>
+                <option value="jefe_area">Jefe de área</option>
+                <option value="residente">Residente</option>
+              </select>
+              {registerTipo === 'especialidad' && (
+                <select
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
+                  value={registerEspecialidad}
+                  onChange={(e) => setRegisterEspecialidad(e.target.value)}
+                >
+                  <option value="ESTRUCTURAS">ESTRUCTURAS</option>
+                  <option value="ARQUITECTURA">ARQUITECTURA</option>
+                  <option value="INSTALACIONES SANITARIAS">INSTALACIONES SANITARIAS</option>
+                  <option value="ELÉCTRICAS">ELÉCTRICAS</option>
+                  <option value="ELECTROMECÁNICAS">ELECTROMECÁNICAS</option>
+                  <option value="ARQUEOLOGÍA">ARQUEOLOGÍA</option>
+                  <option value="SEGURIDAD">SEGURIDAD</option>
+                  <option value="OBRAS PROVICIONALES">OBRAS PROVICIONALES</option>
+                  <option value="PLAN DE MANEJO AMBIENTAL">PLAN DE MANEJO AMBIENTAL</option>
+                </select>
+              )}
+              {registerError && <div className="text-xs text-red-600 mb-2">{registerError}</div>}
+              {registerSuccess && <div className="text-xs text-green-600 mb-2">{registerSuccess}</div>}
+              <button
+                onClick={handleRegister}
+                className="w-full bg-green-600 text-white font-semibold py-2 rounded-lg"
+              >
+                Registrar usuario
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500 mb-4">Usuario o selecciona uno de los ejemplos.</p>
+              <input
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
+                placeholder="Username"
+              />
+              <div className="mb-3 text-xs text-slate-500">Ejemplos: residente, especialidad_estructuras, etc.</div>
+              <input
+                type="password"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Contraseña"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+              />
+              {loginError && <div className="text-xs text-red-600 mb-2">{loginError}</div>}
+              <button
+                disabled={!selectedUserId || !loginPassword}
+                onClick={handleLogin}
+                className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg disabled:bg-slate-300"
+              >
+                Entrar
+              </button>
+              <div className="mt-4 text-xs text-slate-500">Usuarios: 8 especialidades + jefes de área + residentes.</div>
+            </>
+          )}
         </div>
       </div>
     );

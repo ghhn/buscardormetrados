@@ -57,6 +57,44 @@ app.get('/api/metrados', async (req, res) => {
     }
 });
 
+app.get('/api/proyectos', async (req, res) => {
+    try {
+        if (supabase) {
+            const { data, error } = await supabase
+                .from('proyectos')
+                .select('*')
+                .order('id', { ascending: true });
+            if (error) throw error;
+            return res.json(data);
+        }
+
+        const result = await pool.query('SELECT * FROM proyectos ORDER BY id ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching proyectos', err);
+        res.status(500).json({ error: 'Error consultando proyectos' });
+    }
+});
+
+app.get('/api/especialidades', async (req, res) => {
+    try {
+        if (supabase) {
+            const { data, error } = await supabase
+                .from('especialidades')
+                .select('*')
+                .order('id', { ascending: true });
+            if (error) throw error;
+            return res.json(data);
+        }
+
+        const result = await pool.query('SELECT * FROM especialidades ORDER BY id ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching especialidades', err);
+        res.status(500).json({ error: 'Error consultando especialidades' });
+    }
+});
+
 app.post('/api/metrados', async (req, res) => {
     try {
         const m = req.body;
@@ -116,16 +154,33 @@ app.post('/api/metrados', async (req, res) => {
 });
 
 app.post('/api/register', async (req, res) => {
-    const { username, nombre, tipo, password, especialidad_id } = req.body;
+    const { username, nombre, tipo, password, especialidad_id, especialidad_nombre } = req.body;
     if (!username || !nombre || !tipo || !password) {
         return res.status(400).json({ error: 'Faltan datos obligatorios' });
     }
     try {
+        let espId = especialidad_id || null;
+        if (!espId && especialidad_nombre) {
+            if (supabase) {
+                const { data, error } = await supabase
+                    .from('especialidades')
+                    .select('id')
+                    .ilike('nombre', especialidad_nombre)
+                    .limit(1);
+                if (error) throw error;
+                espId = data?.[0]?.id || null;
+            } else {
+                const espQuery = await pool.query('SELECT id FROM especialidades WHERE UPPER(nombre)=UPPER($1) LIMIT 1', [especialidad_nombre]);
+                espId = espQuery.rows[0]?.id || null;
+            }
+        }
+
         const hashed = bcrypt.hashSync(password, 10);
+
         if (supabase) {
             const { data, error } = await supabase
                 .from('usuarios')
-                .insert([{ username, nombre, tipo, password_hash: hashed, especialidad_id: especialidad_id || null }])
+                .insert([{ username, nombre, tipo, password_hash: hashed, especialidad_id: espId }])
                 .select('id, username, nombre, tipo, especialidad_id');
             if (error) {
                 if (error.code === '23505' || error.code === 'uniqueness_violation') {
@@ -138,7 +193,7 @@ app.post('/api/register', async (req, res) => {
 
         const result = await pool.query(
             'INSERT INTO usuarios (username, nombre, tipo, password_hash, especialidad_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, nombre, tipo, especialidad_id',
-            [username, nombre, tipo, hashed, especialidad_id || null]
+            [username, nombre, tipo, hashed, espId]
         );
         const user = result.rows[0];
         res.json({ user });
@@ -155,12 +210,26 @@ app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Falta usuario o contraseña' });
     try {
-        const result = await pool.query('SELECT id, username, nombre, tipo, password_hash FROM usuarios WHERE username = $1', [username]);
+        if (supabase) {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('id, username, nombre, tipo, password_hash, especialidad_id')
+                .eq('username', username)
+                .limit(1);
+            if (error) throw error;
+            if (!data || data.length === 0) return res.status(401).json({ error: 'Credenciales inválidas' });
+            const user = data[0];
+            const valid = bcrypt.compareSync(password, user.password_hash);
+            if (!valid) return res.status(401).json({ error: 'Credenciales inválidas' });
+            return res.json({ id: user.id, username: user.username, nombre: user.nombre, tipo: user.tipo, especialidad_id: user.especialidad_id });
+        }
+
+        const result = await pool.query('SELECT id, username, nombre, tipo, password_hash, especialidad_id FROM usuarios WHERE username = $1', [username]);
         if (result.rows.length === 0) return res.status(401).json({ error: 'Credenciales inválidas' });
         const user = result.rows[0];
         const valid = bcrypt.compareSync(password, user.password_hash);
         if (!valid) return res.status(401).json({ error: 'Credenciales inválidas' });
-        res.json({ id: user.id, username: user.username, nombre: user.nombre, tipo: user.tipo });
+        res.json({ id: user.id, username: user.username, nombre: user.nombre, tipo: user.tipo, especialidad_id: user.especialidad_id });
     } catch (err) {
         console.error('Login error', err);
         res.status(500).json({ error: 'Error en login' });
