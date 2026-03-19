@@ -1,222 +1,33 @@
-import { useState, useEffect } from 'react';
-import { MetradosForm } from './components/MetradosForm';
+import React, { useState, useMemo } from 'react';
 import { MetradosTable } from './components/MetradosTable';
 import { useMetradosForm } from './hooks/useMetradosForm';
 import type { Metrado } from './types';
-import { Building2, Stethoscope, AlertTriangle, UserCircle2, LogOut } from 'lucide-react';
+import { Building2, Stethoscope, AlertTriangle, Save, RotateCcw } from 'lucide-react';
 import { useMetradosStore } from './store/useMetradosStore';
+import { SearchCombobox } from './components/ui/SearchCombobox';
+import { mockPartidas } from './data/mockDB_1';
+import { mockPartidasContingencia } from './data/mockDB_contingencia';
 
 // Tipo de proyecto disponible en el sistema (Hospital o Contingencia)
 export type TipoProyecto = 'hospital' | 'contingencia';
 
-type UserType = 'especialidad' | 'jefe_area' | 'residente';
-
-type User = {
-  id: string;
-  name: string;
-  type: UserType;
-  specialty?: string;
-  specialtyId?: number | null;
-};
-
-type Proyecto = {
-  id: number;
-  nombre: string;
-  tipo: 'hospital' | 'contingencia' | string;
-};
-
-const LOGIN_USERS: User[] = [
-  { id: 'especialidad_estructuras', name: 'Especialidad Estructuras', type: 'especialidad', specialty: 'ESTRUCTURAS' },
-  { id: 'especialidad_arquitectura', name: 'Especialidad Arquitectura', type: 'especialidad', specialty: 'ARQUITECTURA' },
-  { id: 'especialidad_sanitarias', name: 'Especialidad Instalaciones Sanitarias', type: 'especialidad', specialty: 'INSTALACIONES SANITARIAS' },
-  { id: 'especialidad_electricas', name: 'Especialidad Eléctricas', type: 'especialidad', specialty: 'ELÉCTRICAS' },
-  { id: 'especialidad_electromecanicas', name: 'Especialidad Electromecánicas', type: 'especialidad', specialty: 'ELECTROMECÁNICAS' },
-  { id: 'especialidad_arqueologia', name: 'Especialidad Arqueología', type: 'especialidad', specialty: 'ARQUEOLOGÍA' },
-  { id: 'especialidad_seguridad', name: 'Especialidad Seguridad', type: 'especialidad', specialty: 'SEGURIDAD' },
-  { id: 'especialidad_obras_provisionales', name: 'Especialidad Obras Provisionales', type: 'especialidad', specialty: 'OBRAS PROVICIONALES' },
-  { id: 'jefe_area_1', name: 'Jefe de Área 1', type: 'jefe_area' },
-  { id: 'jefe_area_2', name: 'Jefe de Área 2', type: 'jefe_area' },
-  { id: 'residente', name: 'Residente', type: 'residente' },
-];
-
 function App() {
   const { state, actions } = useMetradosForm();
-  const { metrados, context, setContext, addMetrado, updateMetrado, deleteMetrado, updateGroup } = useMetradosStore();
+  const { metrados, context, setContext, addMetrado, updateMetrado, deleteMetrado, updateGroup, addCustomPartida } = useMetradosStore();
   const [toast, setToast] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    if (typeof window === 'undefined') return null;
-    const saved = localStorage.getItem('metrados_current_user');
-    if (!saved) return null;
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return null;
-    }
-  });
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [registerUsername, setRegisterUsername] = useState('');
-  const [registerNombre, setRegisterNombre] = useState('');
-  const [proyectos, setProyectos] = useState<Proyecto[]>([]);
-  const [projectLookup, setProjectLookup] = useState<Record<string, number>>({});
 
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerTipo, setRegisterTipo] = useState<UserType>('especialidad');
-  const [registerEspecialidad, setRegisterEspecialidad] = useState('ESTRUCTURAS');
-  const [registerError, setRegisterError] = useState<string | null>(null);
-  const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
+  // Estados para el Modal de Nueva Partida
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newPartida, setNewPartida] = useState({ codigo: '', descripcion: '', unidad: 'und' });
 
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-
-
-
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const resp = await fetch(`${API_BASE}/api/proyectos`);
-        if (!resp.ok) return;
-        const data = await resp.json();
-        setProyectos(data);
-        const lookup: Record<string, number> = {};
-        data.forEach((p: Proyecto) => {
-          lookup[p.tipo] = p.id;
-        });
-        setProjectLookup(lookup);
-      } catch (err) {
-        console.error('No se pudo cargar proyectos', err);
-      }
-    };
-    loadProjects();
-  }, []);
-
-  const handleLogin = async () => {
-    const username = selectedUserId;
-    if (!username) {
-      setLoginError('Seleccione o escriba un usuario.');
-      return;
-    }
-    if (!loginPassword) {
-      setLoginError('Ingrese contraseña.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password: loginPassword }),
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        setLoginError(err.error || 'Credenciales inválidas');
-        return;
-      }
-      const userData = await response.json();
-      const selectedMeta = LOGIN_USERS.find((u) => u.id === username);
-      const user: User = {
-        id: userData.id,
-        name: userData.nombre || userData.username,
-        type: userData.tipo,
-        specialty: selectedMeta?.specialty,
-        specialtyId: userData.especialidad_id || null,
-      };
-      setCurrentUser(user);
-      localStorage.setItem('metrados_current_user', JSON.stringify(user));
-      setLoginError(null);
-    } catch (err) {
-      console.error(err);
-      setLoginError('No se pudo conectar al servidor de login');
-    }
-  };
-
-  const handleRegister = async () => {
-    setRegisterError(null);
-    setRegisterSuccess(null);
-
-    if (!registerUsername || !registerNombre || !registerPassword || !registerTipo) {
-      setRegisterError('Complete todos los campos obligatorios.');
-      return;
-    }
-    if (registerTipo === 'especialidad' && !registerEspecialidad) {
-      setRegisterError('Seleccione una especialidad para usuarios de tipo especialidad.');
-      return;
-    }
-
-    try {
-      const payload: any = {
-        username: registerUsername,
-        nombre: registerNombre,
-        tipo: registerTipo,
-        password: registerPassword,
-        especialidad_id: null,
-        especialidad_nombre: registerTipo === 'especialidad' ? registerEspecialidad : null,
-      };
-
-      const response = await fetch(`${API_BASE}/api/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        setRegisterError(err.error || 'Error al registrar usuario');
-        return;
-      }
-
-      const data = await response.json();
-      setRegisterSuccess('Usuario registrado con éxito. Ahora inicie sesión.');
-      setIsRegistering(false);
-      setSelectedUserId(registerUsername);
-      setLoginPassword('');
-      setRegisterUsername('');
-      setRegisterNombre('');
-      setRegisterPassword('');
-      setRegisterTipo('especialidad');
-      setRegisterEspecialidad('ESTRUCTURAS');
-    } catch (err) {
-      console.error(err);
-      setRegisterError('No se pudo conectar al servidor para registrar');
-    }
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setSelectedUserId('');
-    setLoginPassword('');
-    setLoginError(null);
-    localStorage.removeItem('metrados_current_user');
-  };
-
-  const handleGuardar = async () => {
+  const handleGuardar = () => {
     const nuevo = actions.procesarRegistro();
     if (nuevo) {
+      // El metrado hereda el proyecto activo al momento de registrarse
       const nuevoConProy = { ...nuevo, proyecto: context.proyecto };
       addMetrado(nuevoConProy);
       setToast(`Metrado guardado: ${nuevo.codigo_partida}`);
       setTimeout(() => setToast(null), 3000);
-
-      try {
-        const proyectoId = projectLookup[context.proyecto] ?? (context.proyecto === 'hospital' ? 1 : 2);
-        const resp = await fetch(`${API_BASE}/api/metrados`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...nuevoConProy,
-            autor_usuario: currentUser?.id ?? null,
-            proyecto_id: proyectoId,
-            especialidad_id: currentUser?.specialtyId ?? null,
-          }),
-        });
-        if (!resp.ok) {
-          console.error('Error guardando en backend', await resp.text());
-          return;
-        }
-      } catch (err) {
-        console.error('Error backend guardar', err);
-      }
     }
   };
 
@@ -268,6 +79,26 @@ function App() {
     }
   };
 
+  const handleAddCustomPartida = () => {
+    if (!newPartida.codigo || !newPartida.descripcion) {
+      alert("Por favor completa el código y la descripción");
+      return;
+    }
+    const created: any = {
+      ...newPartida,
+      es_titulo: false,
+      jerarquia: newPartida.codigo,
+      nivel_jerarquia: newPartida.codigo.split('.').length,
+      modificacion: 'PC' // Partida Creada
+    };
+    addCustomPartida(created);
+    actions.setPartidaSeleccionada(created);
+    setIsModalOpen(false);
+    setNewPartida({ codigo: '', descripcion: '', unidad: 'und' });
+    setToast("Partida personalizada añadida exitosamente");
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleUpdateGroup = (codigoPartida: string, oldElemento: string, newElemento: string) => {
     updateGroup(codigoPartida, oldElemento, newElemento);
   };
@@ -275,171 +106,167 @@ function App() {
   // Filtra los metrados mostrados según el proyecto activo
   const metradosFiltrados = metrados.filter(m => !m.proyecto || m.proyecto === context.proyecto);
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-        <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-lg p-6">
-          <div className="flex items-center gap-2 text-slate-700 mb-4">
-            <UserCircle2 className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold">Iniciar sesión</h2>
-          </div>
-
-          <div className="mb-4 flex gap-2">
-            <button
-              onClick={() => setIsRegistering(false)}
-              className={`flex-1 py-2 rounded-lg font-semibold ${!isRegistering ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-              Iniciar sesión
-            </button>
-            <button
-              onClick={() => setIsRegistering(true)}
-              className={`flex-1 py-2 rounded-lg font-semibold ${isRegistering ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-              Registrar usuario
-            </button>
-          </div>
-
-          {isRegistering ? (
-            <>
-              <p className="text-sm text-slate-500 mb-3">Registre un usuario para crear metrados por especialidad.</p>
-              <input
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                placeholder="Usuario (username)"
-                value={registerUsername}
-                onChange={(e) => setRegisterUsername(e.target.value)}
-              />
-              <input
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                placeholder="Nombre completo"
-                value={registerNombre}
-                onChange={(e) => setRegisterNombre(e.target.value)}
-              />
-              <input
-                type="password"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                placeholder="Contraseña"
-                value={registerPassword}
-                onChange={(e) => setRegisterPassword(e.target.value)}
-              />
-              <select
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                value={registerTipo}
-                onChange={(e) => setRegisterTipo(e.target.value as UserType)}
-              >
-                <option value="especialidad">Especialidad</option>
-                <option value="jefe_area">Jefe de área</option>
-                <option value="residente">Residente</option>
-              </select>
-              {registerTipo === 'especialidad' && (
-                <select
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                  value={registerEspecialidad}
-                  onChange={(e) => setRegisterEspecialidad(e.target.value)}
-                >
-                  <option value="ESTRUCTURAS">ESTRUCTURAS</option>
-                  <option value="ARQUITECTURA">ARQUITECTURA</option>
-                  <option value="INSTALACIONES SANITARIAS">INSTALACIONES SANITARIAS</option>
-                  <option value="ELÉCTRICAS">ELÉCTRICAS</option>
-                  <option value="ELECTROMECÁNICAS">ELECTROMECÁNICAS</option>
-                  <option value="ARQUEOLOGÍA">ARQUEOLOGÍA</option>
-                  <option value="SEGURIDAD">SEGURIDAD</option>
-                  <option value="OBRAS PROVICIONALES">OBRAS PROVICIONALES</option>
-                  <option value="PLAN DE MANEJO AMBIENTAL">PLAN DE MANEJO AMBIENTAL</option>
-                </select>
-              )}
-              {registerError && <div className="text-xs text-red-600 mb-2">{registerError}</div>}
-              {registerSuccess && <div className="text-xs text-green-600 mb-2">{registerSuccess}</div>}
-              <button
-                onClick={handleRegister}
-                className="w-full bg-green-600 text-white font-semibold py-2 rounded-lg"
-              >
-                Registrar usuario
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-slate-500 mb-4">Usuario o selecciona uno de los ejemplos.</p>
-              <input
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                placeholder="Username"
-              />
-              <div className="mb-3 text-xs text-slate-500">Ejemplos: residente, especialidad_estructuras, etc.</div>
-              <input
-                type="password"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Contraseña"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-              />
-              {loginError && <div className="text-xs text-red-600 mb-2">{loginError}</div>}
-              <button
-                disabled={!selectedUserId || !loginPassword}
-                onClick={handleLogin}
-                className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg disabled:bg-slate-300"
-              >
-                Entrar
-              </button>
-              <div className="mt-4 text-xs text-slate-500">Usuarios: 8 especialidades + jefes de área + residentes.</div>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Catálogo para el buscador superior
+  const catalogoBuscador = useMemo(() => {
+    const base = context.proyecto === 'hospital' ? mockPartidas : mockPartidasContingencia;
+    return [...base, ...state.customPartidas];
+  }, [context.proyecto, state.customPartidas]);
 
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative max-w-[1450px] mx-auto">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative max-w-[1600px] mx-auto">
 
-      {/* Header */}
-      <header className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary text-white p-2.5 rounded-xl shadow-lg shadow-primary/30">
-            <Building2 className="w-6 h-6" />
+      {/* Header & Context Bar */}
+      <header className="flex flex-col gap-6">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary text-white p-2.5 rounded-xl shadow-lg shadow-primary/30">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                Metrados Belempampa <span className="text-primary/40 text-lg font-medium ml-1">v5.0</span>
+              </h1>
+              <p className="text-sm text-gray-500 font-medium">Plataforma de Ingeniería Aplicada</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              Metrados Belempampa
-            </h1>
-            <p className="text-sm text-gray-500 font-medium">Plataforma Costos y Presupuestos</p>
+
+          <div className="flex items-center gap-4">
+            {/* ─── Selector de Especialidad ─── */}
+            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+              <button
+                onClick={() => { setContext({ proyecto: 'hospital' }); actions.setPartidaSeleccionada(null); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${context.proyecto === 'hospital'
+                  ? 'bg-blue-50 text-blue-700 shadow-sm border border-blue-100'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  }`}
+              >
+                <Stethoscope className="w-4 h-4" />
+                Hospital
+              </button>
+              <button
+                onClick={() => { setContext({ proyecto: 'contingencia' }); actions.setPartidaSeleccionada(null); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${context.proyecto === 'contingencia'
+                  ? 'bg-amber-50 text-amber-700 shadow-sm border border-amber-100'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                  }`}
+              >
+                <AlertTriangle className="w-4 h-4" />
+                Contingencia
+              </button>
+            </div>
+
+            <div className="h-8 w-px bg-slate-200" />
+
+            {/* Botón de Guardado Rápido */}
+            <button
+              onClick={handleGuardar}
+              disabled={!state.partidaSeleccionada}
+              className={`px-8 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center gap-2 ${state.partidaSeleccionada
+                  ? 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                }`}
+            >
+              <Save className="w-4 h-4" />
+              Registrar Metrado
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <UserCircle2 className="w-5 h-5 text-slate-600" />
-          <div className="text-sm text-slate-700">
-            <div className="font-semibold">{currentUser?.name}</div>
-            <div className="text-xs text-slate-500">{currentUser?.type === 'especialidad' ? `Especialidad: ${currentUser.specialty}` : currentUser.type === 'jefe_area' ? 'Jefe de Área' : 'Residente'}</div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="ml-2 text-slate-500 hover:text-slate-800 rounded-md p-1 border border-slate-200 hover:border-slate-300"
-            aria-label="Cerrar sesión"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
 
-        {/* ─── Selector de Especialidad ─── */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
-          <button
-            onClick={() => { setContext({ proyecto: 'hospital' }); actions.setPartidaSeleccionada(null); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${context.proyecto === 'hospital'
-              ? 'bg-white text-blue-700 shadow-md border border-blue-100'
-              : 'text-slate-500 hover:text-slate-700'
-              }`}
-          >
-            <Stethoscope className="w-4 h-4" />
-            Hospital
-          </button>
-          <button
-            onClick={() => { setContext({ proyecto: 'contingencia' }); actions.setPartidaSeleccionada(null); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${context.proyecto === 'contingencia'
-              ? 'bg-white text-amber-600 shadow-md border border-amber-100'
-              : 'text-slate-500 hover:text-slate-700'
-              }`}
-          >
-            <AlertTriangle className="w-4 h-4" />
-            Contingencia
-          </button>
+        {/* ─── CONTEXT BAR & SEARCH (Metadata Navigation) ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          
+          {/* Selector de Partida Principal */}
+          <div className="lg:col-span-5 flex flex-col gap-1.5 border-r border-slate-100 pr-4">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Buscador de Partida Matriz</label>
+            <SearchCombobox
+              partidas={catalogoBuscador}
+              value={state.partidaSeleccionada ? state.partidaSeleccionada.descripcion : ''}
+              onSelect={(p) => {
+                actions.setPartidaSeleccionada(p);
+                actions.setCantidad(1);
+                actions.setLongitud('');
+                actions.setAncho('');
+                actions.setAltura('');
+              }}
+              onAddPartida={() => setIsModalOpen(true)}
+              placeholder="Buscar por código o descripción..."
+            />
+            {state.partidaSeleccionada && (
+              <div className="flex items-center gap-2 mt-1 px-2 text-slate-500">
+                <span className="text-[9px] font-mono font-black text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                  {state.partidaSeleccionada.codigo}
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-tighter">
+                  Unidad: {state.partidaSeleccionada.unidad}
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-tighter">
+                  Tipo: {state.partidaSeleccionada.unidad === 'kg' ? 'ACERO' : 'ESTÁNDAR'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Metadata Grid */}
+          <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-5 gap-4 h-full items-end">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Fecha</label>
+              <input
+                type="date"
+                value={state.fecha}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setFecha(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Frente</label>
+              <input
+                type="text"
+                placeholder="F1"
+                value={state.frente}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setFrente(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Bloque</label>
+              <input
+                type="text"
+                placeholder="B-01"
+                value={state.bloque}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setBloque(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Nivel</label>
+              <input
+                type="text"
+                placeholder="N+0.00"
+                value={state.nivel}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setNivel(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 relative group">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Cuadrilla</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="C-01"
+                  value={state.cuadrilla}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setCuadrilla(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all pr-10"
+                />
+                <button 
+                  onClick={() => actions.limpiarCampos()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-300 hover:text-red-400 transition-colors"
+                  title="Reiniciar Campos"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -451,21 +278,9 @@ function App() {
       )}
 
 
-      {/* Main Layout Grid */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[70vh]">
-
-        {/* Left Column: Form */}
-        <div className="lg:col-span-4 xl:col-span-3">
-          <MetradosForm
-            state={state}
-            actions={actions}
-            onGuardar={handleGuardar}
-            proyecto={context.proyecto}
-          />
-        </div>
-
-        {/* Right Column: Table History */}
-        <div className="lg:col-span-8 xl:col-span-9 flex flex-col">
+      {/* Main Layout Grid (RECONSTRUIDO: ANCHO COMPLETO) */}
+      <main className="flex-1 min-h-[70vh]">
+        <div className="w-full flex flex-col gap-6">
           <MetradosTable
             metrados={metradosFiltrados}
             onUpdate={handleUpdateMetrado}
@@ -474,9 +289,73 @@ function App() {
             proyecto={context.proyecto}
           />
         </div>
-
       </main>
 
+      {/* Modal - Nueva Partida Personalizada */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 flex flex-col gap-5 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">Crear Partida Nueva</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">✕</button>
+            </div>
+            
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Código / Item</label>
+                <input
+                  type="text"
+                  placeholder="Ej: OE.1.1.2.1"
+                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                  value={newPartida.codigo}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPartida({...newPartida, codigo: e.target.value})}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Descripción</label>
+                <textarea
+                  placeholder="Descripción de la partida..."
+                  rows={3}
+                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all resize-none"
+                  value={newPartida.descripcion}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewPartida({...newPartida, descripcion: e.target.value})}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Unidad</label>
+                <select
+                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all appearance-none cursor-pointer"
+                  value={newPartida.unidad}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewPartida({...newPartida, unidad: e.target.value})}
+                >
+                  <option value="und">und (Unidad)</option>
+                  <option value="m">m (Metro Lineal)</option>
+                  <option value="m2">m2 (Metro Cuadrado)</option>
+                  <option value="m3">m3 (Metro Cúbico)</option>
+                  <option value="kg">kg (Kilogramos - Acero)</option>
+                  <option value="pza">pza (Pieza)</option>
+                  <option value="glb">glb (Global)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 border border-slate-200 transition-all"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleAddCustomPartida}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/95 shadow-lg shadow-primary/20 active:scale-95 transition-all"
+              >
+                Guardar Partida
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

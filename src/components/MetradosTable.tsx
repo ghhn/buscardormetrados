@@ -3,7 +3,31 @@ import type { Metrado, Partida } from '../types';
 import { Download, Trash2, Loader2, Eraser } from 'lucide-react';
 import { mockPartidas } from '../data/mockDB_1';
 import { mockPartidasContingencia } from '../data/mockDB_contingencia';
-import { RenderModificacionBadge } from './MetradosForm';
+export const RenderModificacionBadge = (modificacionStr?: string) => {
+    if (!modificacionStr) {
+        return (
+            <div className="w-[10px] h-[10px] rounded-full bg-sky-200 shadow-sm border border-sky-300 shrink-0" title="Sin Modificación" />
+        );
+    }
+
+    const tags = modificacionStr.split('-');
+
+    return (
+        <div className="flex items-center gap-1 shrink-0">
+            {tags.map((tag, i) => {
+                let colorClass = "bg-slate-200 border-slate-300";
+                if (tag.startsWith('DD')) colorClass = "bg-red-500 border-red-600";
+                if (tag.startsWith('PN')) colorClass = "bg-green-500 border-green-600";
+                if (tag.startsWith('MM')) colorClass = "bg-blue-500 border-blue-600";
+                if (tag.startsWith('PC')) colorClass = "bg-[#FF69B4] border-[#FF1493]"; 
+
+                return (
+                    <div key={i} className={`w-[10px] h-[10px] rounded-full border shadow-sm ${colorClass}`} title={tag} />
+                );
+            })}
+        </div>
+    );
+};
 import { useMetradosStore } from '../store/useMetradosStore';
 import { SPECIALTY_RULES } from '../data/specialtyConfig';
 
@@ -237,18 +261,18 @@ export const MetradosTable: React.FC<MetradosTableProps> = ({ metrados, onUpdate
             {/* Contenedor con Scroll */}
             <div className="overflow-auto flex-grow max-h-[calc(100vh-250px)] scrollbar-thin scrollbar-thumb-slate-200">
                 <table className="w-full text-[13px] text-left align-middle border-collapse table-fixed">
-                    <thead className="text-[11px] text-slate-400 bg-white uppercase whitespace-nowrap sticky top-0 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] z-10 font-bold">
+                    <thead className="text-[11px] text-slate-400 bg-white uppercase whitespace-nowrap sticky top-0 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] z-20 font-bold">
                         <tr className="border-b border-slate-100">
-                            <th className="w-[80px] min-w-[80px] px-1.5 py-3 text-left">Item / Código</th>
-                            <th className="px-2 py-3">Descripción / Partida / Metrado</th>
-                            <th className="w-[45px] min-w-[45px] px-1 py-3 text-center">Und</th>
-                            <th className="w-[60px] min-w-[60px] px-1 py-3 text-right text-[10px]">CANT.</th>
-                            <th className="w-[80px] min-w-[80px] px-1 py-3 text-right text-[10px]">LONG./AREA</th>
-                            <th className="w-[70px] min-w-[70px] px-1 py-3 text-right text-[10px]">ANCHO</th>
-                            <th className="w-[70px] min-w-[70px] px-1 py-3 text-right text-[10px]">ALT./GAN.</th>
-                            <th className="w-[80px] min-w-[80px] px-2 py-3 text-right text-[10px]">Parcial</th>
-                            <th className="w-[50px] min-w-[50px] px-1 py-3 text-center text-[10px]">Veces</th>
-                            <th className="w-[85px] min-w-[85px] px-2 py-3 text-right text-[10px]">Total</th>
+                            <th className="w-[100px] min-w-[100px] px-1.5 py-3 text-left">Item / Código</th>
+                            <th className="px-2 py-3 min-w-[300px]">Descripción / Partida / Metrado</th>
+                            <th className="w-[55px] min-w-[55px] px-1 py-3 text-center">Und</th>
+                            <th className="w-[75px] min-w-[75px] px-1 py-3 text-right text-[10px]">CANT.</th>
+                            <th className="w-[90px] min-w-[90px] px-1 py-3 text-right text-[10px]">LONG./AREA</th>
+                            <th className="w-[80px] min-w-[80px] px-1 py-3 text-right text-[10px]">ANCHO</th>
+                            <th className="w-[80px] min-w-[80px] px-1 py-3 text-right text-[10px]">ALT./GAN.</th>
+                            <th className="w-[95px] min-w-[95px] px-2 py-3 text-right text-[10px]">Parcial</th>
+                            <th className="w-[60px] min-w-[60px] px-1 py-3 text-center text-[10px]">Veces</th>
+                            <th className="w-[100px] min-w-[100px] px-2 py-3 text-right text-[10px]">Total</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white">

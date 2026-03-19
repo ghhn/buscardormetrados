@@ -6,7 +6,7 @@ import type { TipoProyecto } from '../App';
 import { isAcero } from '../hooks/useMetradosForm';
 import { mockPartidas } from '../data/mockDB_1';
 import { mockPartidasContingencia } from '../data/mockDB_contingencia';
-import { ESPECIALIDADES_PARTIDA } from '../constants/especialidades';
+import { ESPECIALIDADES_PARTIDA, getEspecialidadPorCodigo } from '../constants/especialidades';
 import { Save, Eraser } from 'lucide-react';
 import { HVAC_DATA } from '../data/hvacData';
 
@@ -300,7 +300,7 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                             </label>
                             {state.hvacConfig ? (
                                 <SimpleSearchInput 
-                                    placeholder={`Buscar ${state.hvacConfig.category.toLowerCase()}...`}
+                                    placeholder={state.hvacConfig.category === 'TODO' ? "Buscar ducto o accesorio..." : `Buscar ${state.hvacConfig.category.toLowerCase()}...`}
                                     value={state.detalle}
                                     onChange={val => actions.setDetalle(val)}
                                     // @ts-ignore
@@ -316,6 +316,13 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                                     suggestions={
                                         state.hvacConfig.category === 'DUCTO' 
                                         ? HVAC_DATA.DUCTO.map(i => ({ ...i, type: 'DUCTO' }))
+                                        : state.hvacConfig.category === 'TODO'
+                                        ? [
+                                            ...HVAC_DATA.DUCTO.map(i => ({ ...i, type: 'DUCTO' })),
+                                            ...HVAC_DATA.TEE.map(i => ({ ...i, type: 'TEE' })), 
+                                            ...HVAC_DATA.REDUCCIONES.map(i => ({ ...i, type: 'REDUCCION' })), 
+                                            ...HVAC_DATA.CODO.map(i => ({ ...i, type: 'CODO' }))
+                                          ]
                                         : [
                                             ...HVAC_DATA.TEE.map(i => ({ ...i, type: 'TEE' })), 
                                             ...HVAC_DATA.REDUCCIONES.map(i => ({ ...i, type: 'REDUCCION' })), 
@@ -347,7 +354,11 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                             { key: 'cantidad', label: flagAcero ? 'N°' : 'CANTIDAD', nextId: 'input-longitud' },
                             { key: 'longitud', label: flagAcero ? 'LONG' : 'LONGITUD/AREA', nextId: flagAcero ? 'input-altura' : 'input-ancho' },
                         ];
-                        if (!flagAcero) config.push({ key: 'ancho', label: 'ANCHO / EMPAME', nextId: 'input-altura' });
+                        if (!flagAcero) {
+                            const especialidad = getEspecialidadPorCodigo(state.partidaSeleccionada?.codigo || '');
+                            const labelAncho = especialidad === 'ARQUITECTURA' ? 'ANCHO/EMPAME/KG' : 'ANCHO / EMPAME';
+                            config.push({ key: 'ancho', label: labelAncho, nextId: 'input-altura' });
+                        }
                         config.push({ key: 'altura', label: flagAcero ? 'GAN' : 'ALTURA / GANCHO', nextId: 'input-veces' });
 
                         const fields = config.map(({ key, label, nextId }) => {

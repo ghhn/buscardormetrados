@@ -25,17 +25,22 @@ export const isAcero = (partida: Partida | null): boolean => {
 export const getHvacCategory = (partida: Partida | null): string | null => {
     if (!partida) return null;
     const codigo = partida.codigo;
-    
-    // Categoría TEE, REDUCCIONES, CODOS
-    if (['OE.5.6.16.5.8', 'OE.5.6.16.5.11.2', 'OE.5.6.16.5.11.5', 'OE.5.6.16.5.12.1'].includes(codigo)) {
-        return 'ACCESORIO'; 
+
+    // Partidas que requieren TODO (Ductos + Accesorios)
+    if (['OE.5.6.16.5.11.5', 'OE.5.6.16.5.12.1'].includes(codigo)) {
+        return 'TODO';
     }
-    
+
+    // Categoría TEE, REDUCCIONES, CODOS
+    if (['OE.5.6.16.5.8', 'OE.5.6.16.5.11.2'].includes(codigo)) {
+        return 'ACCESORIO';
+    }
+
     // Categoría DUCTO
-    if (['OE.5.6.16.5.7', 'OE.5.6.16.5.11.1', 'OE.5.6.16.5.11.5', 'OE.5.6.16.5.12.1'].includes(codigo)) {
+    if (['OE.5.6.16.5.7', 'OE.5.6.16.5.11.1'].includes(codigo)) {
         return 'DUCTO';
     }
-    
+
     return null;
 };
 
@@ -91,14 +96,14 @@ export const useMetradosForm = () => {
             // El usuario quiere que en CODOS se use Longitud.
             // La fórmula del parcial para HVAC ahora debe contemplar si Longitud está habilitada.
             const c = typeof cantidad === 'number' ? cantidad : 1;
-            
+
             // Si es CODO o DUCTO, consideramos la Longitud en el cálculo si se ingresó
             const l = (hvacItemType === 'CODO' || hvacItemType === 'DUCTO') && typeof longitud === 'number' ? longitud : 1;
-            
+
             // Ancho y Altura están bloqueados para accesorios HVAC, así que usamos 1
             const a = typeof ancho === 'number' ? ancho : 1;
             const h = typeof altura === 'number' ? altura : 1;
-            
+
             return c * l * a * h * hvacFactor;
         } else {
             if (cantidad === "" && longitud === "" && ancho === "" && altura === "") return 0;

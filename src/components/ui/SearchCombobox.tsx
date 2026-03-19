@@ -7,9 +7,10 @@ interface SearchComboboxProps {
     onSelect: (partida: Partida) => void;
     onAddPartida?: () => void;
     value: string;
+    placeholder?: string;
 }
 
-export const SearchCombobox: React.FC<SearchComboboxProps> = ({ partidas, onSelect, onAddPartida, value }) => {
+export const SearchCombobox: React.FC<SearchComboboxProps> = ({ partidas, onSelect, onAddPartida, value, placeholder }) => {
     const [query, setQuery] = useState(value);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -46,7 +47,7 @@ export const SearchCombobox: React.FC<SearchComboboxProps> = ({ partidas, onSele
                 <input
                     type="text"
                     className="w-full pl-10 pr-10 h-[34px] rounded-xl border border-slate-200 bg-white shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all text-xs outline-none font-bold text-slate-700"
-                    placeholder="Buscar por código o descripción..."
+                    placeholder={placeholder || "Buscar por código o descripción..."}
                     value={query}
                     onFocus={(e) => {
                         e.target.select();
