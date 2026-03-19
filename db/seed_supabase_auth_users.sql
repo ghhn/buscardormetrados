@@ -9,9 +9,6 @@
 create extension if not exists pgcrypto;
 create extension if not exists unaccent;
 
-alter table if exists public.usuarios
-  add column if not exists email varchar(150);
-
 do $$
 declare
   seed_row record;
@@ -34,33 +31,33 @@ begin
 
   insert into tmp_seed_metradores (email, username, nombre, tipo, especialidad_nombre, password_plain)
   values
-    ('lgm.ast.est@gmail.com', 'lgm_ast_est', 'LUWI GILBERT MENDOZA GONZALES', 'especialidad', 'Estructuras', 'Metrados2026!'),
-    ('henryfcp2016@gmail.com', 'henryfcp2016', 'HENRY FELIX CUSIHUAMAN PUMA', 'especialidad', 'Electricas', 'Metrados2026!'),
-    ('jld.ast.cop@gmail.com', 'jld_ast_cop', 'JORGE LUIS DUEÑAS TITITO', 'especialidad', 'Costos informacion', 'Metrados2026!'),
-    ('hcc.ast.cop@gmail.com', 'hcc_ast_cop', 'HENRY CASTILLO CABALLERO', 'especialidad', 'Costos informacion', 'Metrados2026!'),
-    ('lesr.ast.liq@gmail.com', 'lesr_ast_liq', 'LUPITA SALAZAR RAMIREZ', 'especialidad', 'Liquidaciones', 'Metrados2026!'),
-    ('rcm.ast.iss@gmail.com', 'rcm_ast_iss', 'ROSMERY CONDORI MAMANI', 'especialidad', 'Sanitarias', 'Metrados2026!'),
-    ('smch.ast.iis@gmail.com', 'smch_ast_iis', 'SHESSIRA MILAGROS CATUNTA HUAM', 'especialidad', 'Sanitarias', 'Metrados2026!'),
-    ('kmst.ast.cop@gmail.com', 'kmst_ast_cop', 'KATHERIN MARGOT SUMA TACO', 'especialidad', 'Obras Provisionales', 'Metrados2026!'),
-    ('rdb.ast.ssoma@gmail.com', 'rdb_ast_ssoma', 'RUBEN DARIO BRAVO TUNQUI', 'especialidad', 'SSOMA', 'Metrados2026!'),
-    ('kmr.ast.aque@gmail.com', 'kmr_ast_aque', 'KENNY MALDONADO RAMOS', 'especialidad', 'Arqueologia', 'Metrados2026!'),
-    ('accm.ast.cop@gmail.com', 'accm_ast_cop', 'ALDAIR CHRISTIAN CONTRERAS MON', 'especialidad', 'Estructuras', 'Metrados2026!'),
-    ('kmda.ast.cop@gmail.com', 'kmda_ast_cop', 'KLEYSON MANUEL DIAZ ARAUJO', 'especialidad', 'Estructuras', 'Metrados2026!'),
-    ('twmc.ast.cpres@gmail.com', 'twmc_ast_cpres', 'T. WILDER MORA CARRILLO', 'especialidad', 'Estructuras', 'Metrados2026!'),
-    ('acc.ast.arq@gmail.com', 'acc_ast_arq', 'ALVARO CATACORA CHAMPI', 'especialidad', 'Arquitectura', 'Metrados2026!'),
-    ('llvs.ast.arq@gmail.com', 'llvs_ast_arq', 'LAURA LUCIA SALIZAR VALENZULA', 'especialidad', 'Arquitectura', 'Metrados2026!'),
-    ('velitagarcia.arq@gmail.com', 'velitagarcia_arq', 'INGRID VELITA GARCIA', 'especialidad', 'Arquitectura', 'Metrados2026!'),
-    ('raah.ast.arq@gmail.com', 'raah_ast_arq', 'RUDYAR ANTONIO APAZA HUAMAN', 'especialidad', 'Arquitectura', 'Metrados2026!'),
-    ('bcm.ast.cpres@gmail.com', 'bcm_ast_cpres', 'BRAYAN CANDIA MEZA', 'especialidad', 'Sanitarias', 'Metrados2026!'),
-    ('edwg.ast.prod@gmail.com', 'edwg_ast_prod', 'EDILTHON DENNY WARTHON GOMEZ', 'especialidad', 'Sanitarias', 'Metrados2026!'),
-    ('jdcl.ast.cpres@gmail.com', 'jdcl_ast_cpres', 'JUAN DIEGO CUTIPA LOAYZA', 'especialidad', 'Electricas', 'Metrados2026!'),
-    ('wkch.ast.cop@gmail.com', 'wkch_ast_cop', 'WENDY KATERIN CUNO HUALLPA', 'especialidad', 'Electricas', 'Metrados2026!'),
-    ('bgpq.ast.cop@gmail.com', 'bgpq_ast_cop', 'BRANDHON GIOVANNY PILCO QUISP', 'especialidad', 'Mecanicas', 'Metrados2026!'),
-    ('lims.ast.req@gmail.com', 'lims_ast_req', 'LIDUVINA ISABEL MAMANI SARCO', 'especialidad', 'Mecanicas', 'Metrados2026!'),
-    ('pkco.ast.cop@gmail.com', 'pkco_ast_cop', 'PATRICK KLUIVERT CABRERA OCAMP', 'especialidad', 'Tic''s', 'Metrados2026!'),
-    ('mesc.ast.ics@gmail.com', 'mesc_ast_ics', 'MARCO EMERSON SOLIS CANO', 'especialidad', 'Tic''s', 'Metrados2026!'),
-    ('lsv.ast.amb@gmail.com', 'lsv_ast_amb', 'LIDIA SANCHEZ VALENZUELA', 'especialidad', 'Medio Ambiente', 'Metrados2026!'),
-    ('dmhq.ast.amb@gmail.com', 'dmhq_ast_amb', 'DAYCELY MIRIAM HUANCA QUISPE', 'especialidad', 'Medio Ambiente', 'Metrados2026!');
+    ('lgm.ast.est@gmail.com', 'lgm_ast_est', 'LUWI GILBERT MENDOZA GONZALES', 'especialidad', 'Estructuras', '123456'),
+    ('henryfcp2016@gmail.com', 'henryfcp2016', 'HENRY FELIX CUSIHUAMAN PUMA', 'especialidad', 'Electricas', '123456'),
+    ('jld.ast.cop@gmail.com', 'jld_ast_cop', 'JORGE LUIS DUEÑAS TITITO', 'especialidad', 'Costos informacion', '123456'),
+    ('hcc.ast.cop@gmail.com', 'hcc_ast_cop', 'HENRY CASTILLO CABALLERO', 'especialidad', 'Costos informacion', '123456'),
+    ('lesr.ast.liq@gmail.com', 'lesr_ast_liq', 'LUPITA SALAZAR RAMIREZ', 'especialidad', 'Liquidaciones', '123456'),
+    ('rcm.ast.iss@gmail.com', 'rcm_ast_iss', 'ROSMERY CONDORI MAMANI', 'especialidad', 'Sanitarias', '123456'),
+    ('smch.ast.iis@gmail.com', 'smch_ast_iis', 'SHESSIRA MILAGROS CATUNTA HUAM', 'especialidad', 'Sanitarias', '123456'),
+    ('kmst.ast.cop@gmail.com', 'kmst_ast_cop', 'KATHERIN MARGOT SUMA TACO', 'especialidad', 'Obras Provisionales', '123456'),
+    ('rdb.ast.ssoma@gmail.com', 'rdb_ast_ssoma', 'RUBEN DARIO BRAVO TUNQUI', 'especialidad', 'SSOMA', '123456'),
+    ('kmr.ast.aque@gmail.com', 'kmr_ast_aque', 'KENNY MALDONADO RAMOS', 'especialidad', 'Arqueologia', '123456'),
+    ('accm.ast.cop@gmail.com', 'accm_ast_cop', 'ALDAIR CHRISTIAN CONTRERAS MON', 'especialidad', 'Estructuras', '123456'),
+    ('kmda.ast.cop@gmail.com', 'kmda_ast_cop', 'KLEYSON MANUEL DIAZ ARAUJO', 'especialidad', 'Estructuras', '123456'),
+    ('twmc.ast.cpres@gmail.com', 'twmc_ast_cpres', 'T. WILDER MORA CARRILLO', 'especialidad', 'Estructuras', '123456'),
+    ('acc.ast.arq@gmail.com', 'acc_ast_arq', 'ALVARO CATACORA CHAMPI', 'especialidad', 'Arquitectura', '123456'),
+    ('llvs.ast.arq@gmail.com', 'llvs_ast_arq', 'LAURA LUCIA SALIZAR VALENZULA', 'especialidad', 'Arquitectura', '123456'),
+    ('velitagarcia.arq@gmail.com', 'velitagarcia_arq', 'INGRID VELITA GARCIA', 'especialidad', 'Arquitectura', '123456'),
+    ('raah.ast.arq@gmail.com', 'raah_ast_arq', 'RUDYAR ANTONIO APAZA HUAMAN', 'especialidad', 'Arquitectura', '123456'),
+    ('bcm.ast.cpres@gmail.com', 'bcm_ast_cpres', 'BRAYAN CANDIA MEZA', 'especialidad', 'Sanitarias', '123456'),
+    ('edwg.ast.prod@gmail.com', 'edwg_ast_prod', 'EDILTHON DENNY WARTHON GOMEZ', 'especialidad', 'Sanitarias', '123456'),
+    ('jdcl.ast.cpres@gmail.com', 'jdcl_ast_cpres', 'JUAN DIEGO CUTIPA LOAYZA', 'especialidad', 'Electricas', '123456'),
+    ('wkch.ast.cop@gmail.com', 'wkch_ast_cop', 'WENDY KATERIN CUNO HUALLPA', 'especialidad', 'Electricas', '123456'),
+    ('bgpq.ast.cop@gmail.com', 'bgpq_ast_cop', 'BRANDHON GIOVANNY PILCO QUISP', 'especialidad', 'Mecanicas', '123456'),
+    ('lims.ast.req@gmail.com', 'lims_ast_req', 'LIDUVINA ISABEL MAMANI SARCO', 'especialidad', 'Mecanicas', '123456'),
+    ('pkco.ast.cop@gmail.com', 'pkco_ast_cop', 'PATRICK KLUIVERT CABRERA OCAMP', 'especialidad', 'Tic''s', '123456'),
+    ('mesc.ast.ics@gmail.com', 'mesc_ast_ics', 'MARCO EMERSON SOLIS CANO', 'especialidad', 'Tic''s', '123456'),
+    ('lsv.ast.amb@gmail.com', 'lsv_ast_amb', 'LIDIA SANCHEZ VALENZUELA', 'especialidad', 'Medio Ambiente', '123456'),
+    ('dmhq.ast.amb@gmail.com', 'dmhq_ast_amb', 'DAYCELY MIRIAM HUANCA QUISPE', 'especialidad', 'Medio Ambiente', '123456');
 
   for seed_row in
     select *
@@ -226,9 +223,8 @@ begin
       v_password_hash,
       v_especialidad_id
     )
-    on conflict (id) do update
+    on conflict (email) do update
     set
-      email = excluded.email,
       username = excluded.username,
       nombre = excluded.nombre,
       tipo = excluded.tipo,
