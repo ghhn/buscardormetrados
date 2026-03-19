@@ -1,4 +1,5 @@
 // DEPLOY_FORCE: 2026-03-12 09:38
+<<<<<<< HEAD
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', 'src', '.env') });
 const express = require('express');
@@ -7,6 +8,14 @@ const fs = require('fs');
 const ExcelJS = require('exceljs');
 const bcrypt = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
+=======
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const ExcelJS = require('exceljs');
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 
 const app = express();
 const corsOptions = {
@@ -16,15 +25,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 
+<<<<<<< HEAD
 // Inicializar cliente Supabase
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 // Ruta a la plantilla local
 const TEMPLATE_PATH = path.join(__dirname, '..', 'METRADO_PLANTILLA_5.xlsx');
 const STARTING_ROW = 8; // B8 corresponde a Fila 8
 
+<<<<<<< HEAD
 const normalizeSpecialtyName = (value) => {
     if (!value) return null;
 
@@ -64,10 +77,13 @@ async function buildSpecialtyLookup() {
     return lookup;
 }
 
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 app.get('/', (req, res) => {
     res.send('✅ Servidor Proxy INKAIA Online (Modo Excel Local).');
 });
 
+<<<<<<< HEAD
 // === ENDPOINTS DE AUTENTICACIÓN ===
 
 /**
@@ -283,6 +299,8 @@ app.delete('/metrados/:metrado_id', async (req, res) => {
     }
 }
 
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 // Pesos nominales de acero (kg/m)
 const validacionesPesoAcero = {
     "6mm": 0.222,

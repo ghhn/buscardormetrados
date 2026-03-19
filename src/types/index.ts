@@ -61,6 +61,9 @@ export interface Metrado {
     modificacion?: string;
     proyecto?: string;
     especialidad?: string;
+<<<<<<< HEAD
     especialidad_id?: number | null;
     is_template?: boolean;
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 }

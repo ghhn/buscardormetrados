@@ -8,6 +8,7 @@ export default defineConfig({
   base: './',
   build: {
     assetsDir: '',
+<<<<<<< HEAD
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -24,6 +25,8 @@ export default defineConfig({
         },
       },
     },
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
   },
   server: {
     host: true,

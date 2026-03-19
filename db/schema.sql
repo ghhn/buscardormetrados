@@ -1,5 +1,9 @@
 -- PostgreSQL relational schema for Buscador Metrados
+<<<<<<< HEAD
 -- Run with: psql -d presupuesto -f db/schema.sql
+=======
+-- Run with: psql -d your_db -f db/schema.sql
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 
 -- 1) Enums
 CREATE TYPE proyecto_tipo AS ENUM ('hospital', 'contingencia');
@@ -28,8 +32,12 @@ CREATE TABLE proyectos (
 -- 3) Usuarios (login)
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+<<<<<<< HEAD
     email VARCHAR(150) NOT NULL UNIQUE,
     username VARCHAR(100) NULL,
+=======
+    username VARCHAR(100) NOT NULL UNIQUE,
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
     nombre VARCHAR(160) NOT NULL,
     tipo usuario_tipo NOT NULL,
     password_hash TEXT NOT NULL,

@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+<<<<<<< HEAD
     "start": "node index.js",
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,7 +15,10 @@
   "description": "",
   "dependencies": {
     "3-entregable-web-buscador-de-metrados": "file:..",
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.39.0",
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",

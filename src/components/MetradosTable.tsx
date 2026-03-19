@@ -1,10 +1,18 @@
 import React, { useMemo } from 'react';
 import type { Metrado, Partida } from '../types';
 import { Download, Trash2, Loader2, Eraser } from 'lucide-react';
+<<<<<<< HEAD
 import { RenderModificacionBadge } from './MetradosForm';
 import { useMetradosStore } from '../store/useMetradosStore';
 import { SPECIALTY_RULES } from '../data/specialtyConfig';
 import { usePartidasCatalog } from '../hooks/usePartidasCatalog';
+=======
+import { mockPartidas } from '../data/mockDB_1';
+import { mockPartidasContingencia } from '../data/mockDB_contingencia';
+import { RenderModificacionBadge } from './MetradosForm';
+import { useMetradosStore } from '../store/useMetradosStore';
+import { SPECIALTY_RULES } from '../data/specialtyConfig';
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 
 interface MetradosTableProps {
     metrados: Metrado[];
@@ -92,6 +100,7 @@ const getHierarchicalRows = (activeMetrados: Metrado[], partidasCatalogo: Partid
 
 export const MetradosTable: React.FC<MetradosTableProps> = ({ metrados, onUpdate, onGroupUpdate, onDelete, proyecto = 'hospital' }) => {
     const { customPartidas } = useMetradosStore();
+<<<<<<< HEAD
     const { partidas: partidasBase, isLoading: isLoadingCatalog } = usePartidasCatalog(
         proyecto === 'contingencia' ? 'contingencia' : 'hospital'
     );
@@ -100,6 +109,14 @@ export const MetradosTable: React.FC<MetradosTableProps> = ({ metrados, onUpdate
     const catalogoActivo = useMemo(() => {
         return [...partidasBase, ...customPartidas];
     }, [partidasBase, customPartidas]);
+=======
+
+    // Seleccionar el catálogo de partidas correcto según el proyecto y sumarle las personalizadas
+    const catalogoActivo = useMemo(() => {
+        const base = proyecto === 'hospital' ? mockPartidas : mockPartidasContingencia;
+        return [...base, ...customPartidas];
+    }, [proyecto, customPartidas]);
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 
     const [selectedSpecialty, setSelectedSpecialty] = React.useState('TODAS');
 
@@ -207,9 +224,12 @@ export const MetradosTable: React.FC<MetradosTableProps> = ({ metrados, onUpdate
                                 <option key={rule.id} value={rule.id}>{rule.label}</option>
                             ))}
                         </select>
+<<<<<<< HEAD
                         {isLoadingCatalog && (
                             <span className="text-[9px] text-slate-400 uppercase tracking-wider">Cargando catálogo...</span>
                         )}
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
