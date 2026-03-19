@@ -28,7 +28,8 @@ CREATE TABLE proyectos (
 -- 3) Usuarios (login)
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    username VARCHAR(100) NULL,
     nombre VARCHAR(160) NOT NULL,
     tipo usuario_tipo NOT NULL,
     password_hash TEXT NOT NULL,

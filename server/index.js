@@ -1,10 +1,12 @@
 // DEPLOY_FORCE: 2026-03-12 09:38
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', 'src', '.env') });
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
-const path = require('path');
 const ExcelJS = require('exceljs');
+const bcrypt = require('bcryptjs');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const corsOptions = {
@@ -14,13 +16,272 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 
+// Inicializar cliente Supabase
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 // Ruta a la plantilla local
 const TEMPLATE_PATH = path.join(__dirname, '..', 'METRADO_PLANTILLA_5.xlsx');
 const STARTING_ROW = 8; // B8 corresponde a Fila 8
 
+const normalizeSpecialtyName = (value) => {
+    if (!value) return null;
+
+    const normalized = value
+        .toString()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase();
+
+    const specialtyAliases = {
+        'OBRAS PROVISIONALES': 'OBRAS PROVICIONALES',
+        'SANITARIAS': 'INSTALACIONES SANITARIAS',
+        'ELECTRICAS': 'ELECTRICAS',
+        'ARQUEOLOGIA': 'ARQUEOLOGIA',
+        'MECANICAS': 'ELECTROMECANICAS',
+        'MEDIO AMBIENTE': 'PLAN DE MANEJO AMBIENTAL',
+        'SSOMA': 'SEGURIDAD',
+        'TICS': 'COMUNICACIONES',
+        "TIC'S": 'COMUNICACIONES',
+    };
+
+    return specialtyAliases[normalized] || normalized;
+};
+
+async function buildSpecialtyLookup() {
+    const { data, error } = await supabase
+        .from('especialidades')
+        .select('id, nombre');
+
+    if (error) throw error;
+
+    const lookup = new Map();
+    for (const specialty of data || []) {
+        lookup.set(normalizeSpecialtyName(specialty.nombre), specialty.id);
+    }
+    return lookup;
+}
+
 app.get('/', (req, res) => {
     res.send('✅ Servidor Proxy INKAIA Online (Modo Excel Local).');
 });
+
+// === ENDPOINTS DE AUTENTICACIÓN ===
+
+/**
+ * POST /auth/login
+ * DEPRECATED: Usar Supabase Auth directamente desde el frontend
+ * Este endpoint se mantiene por compatibilidad
+ */
+app.post('/auth/login', async (req, res) => {
+    return res.status(200).json({ 
+        success: false,
+        error: 'Usa Supabase Authentication desde el frontend. Ver documentación.'
+    });
+});
+
+/**
+ * GET /auth/usuarios
+ * Retorna lista de todos los usuarios disponibles
+ */
+app.get('/auth/usuarios', async (req, res) => {
+    try {
+        const { data: usuarios, error } = await supabase
+            .from('usuarios')
+            .select('id, email, nombre, tipo, especialidad_id');
+
+        if (error) throw error;
+
+        res.json({ 
+            success: true, 
+            usuarios: usuarios || [] 
+        });
+
+    } catch (err) {
+        console.error('[AUTH] Error obteniendo usuarios:', err);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error obteniendo usuarios' 
+        });
+    }
+});
+
+// === ENDPOINTS DE METRADOS ===
+
+/**
+ * POST /metrados
+ * Guarda un lote de metrados en la BD asociados a un usuario
+ * Body: { metrados: [], usuario_id, proyecto, especialidad }
+ */
+app.post('/metrados', async (req, res) => {
+    try {
+        const { metrados, usuario_id, proyecto, especialidad } = req.body;
+
+        if (!usuario_id || !Array.isArray(metrados) || metrados.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'usuario_id y metrados[] son requeridos' 
+            });
+        }
+
+        const specialtyLookup = await buildSpecialtyLookup();
+
+        const metradosPayload = metrados.map(m => {
+            const resolvedSpecialtyId =
+                m.especialidad_id ??
+                specialtyLookup.get(normalizeSpecialtyName(m.especialidad)) ??
+                especialidad ??
+                null;
+
+            return {
+                fecha: m.fecha || new Date().toISOString().split('T')[0],
+                frente: m.frente,
+                bloque: m.bloque,
+                nivel: m.nivel,
+                cuadrilla: m.cuadrilla,
+                codigo_partida: m.codigo_partida,
+                descripcion_partida: m.descripcion_partida,
+                elemento: m.elemento,
+                detalle: m.detalle,
+                diametro: m.diametro,
+                cantidad: m.cantidad,
+                longitud_area: m.longitud_area,
+                ancho_empalme: m.ancho_empalme,
+                altura_gancho: m.altura_gancho,
+                parcial: m.parcial,
+                nro_veces: m.nro_veces,
+                total: m.total,
+                unidad: m.unidad,
+                autor_usuario: usuario_id,
+                proyecto_id: proyecto === 'hospital' ? 1 : 2,
+                especialidad_id: resolvedSpecialtyId,
+                modificacion: m.modificacion
+            };
+        });
+
+        const missingSpecialty = metradosPayload.find(m => !m.especialidad_id);
+        if (missingSpecialty) {
+            return res.status(400).json({
+                success: false,
+                error: `No se pudo resolver la especialidad para la partida ${missingSpecialty.codigo_partida}`
+            });
+        }
+
+        const { data, error } = await supabase
+            .from('metrados')
+            .insert(metradosPayload)
+            .select();
+
+        if (error) throw error;
+
+        res.json({ 
+            success: true, 
+            message: `${data.length} metrados guardados exitosamente`,
+            saved: data.length
+        });
+
+    } catch (err) {
+        console.error('[METRADOS] Error guardando:', err);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error guardando metrados' 
+        });
+    }
+});
+
+/**
+ * GET /metrados/usuario/:usuario_id
+ * Obtiene todos los metrados de un usuario específico
+ */
+app.get('/metrados/usuario/:usuario_id', async (req, res) => {
+    try {
+        const { usuario_id } = req.params;
+
+        const { data: metrados, error } = await supabase
+            .from('metrados')
+            .select('*')
+            .eq('autor_usuario', usuario_id)
+            .order('creado_en', { ascending: false });
+
+        if (error) throw error;
+
+        res.json({ 
+            success: true, 
+            metrados: metrados || [],
+            count: metrados?.length || 0
+        });
+
+    } catch (err) {
+        console.error('[METRADOS] Error obteniendo:', err);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error obteniendo metrados' 
+        });
+    }
+});
+
+/**
+ * GET /metrados/proyecto/:proyecto/especialidad/:especialidad
+ * Obtiene metrados por proyecto y especialidad
+ */
+app.get('/metrados/proyecto/:proyecto/especialidad/:especialidad', async (req, res) => {
+    try {
+        const { proyecto, especialidad } = req.params;
+        const proyectoId = proyecto === 'hospital' ? 1 : 2;
+
+        const { data: metrados, error } = await supabase
+            .from('metrados')
+            .select('*')
+            .eq('proyecto_id', proyectoId)
+            .eq('especialidad_id', especialidad)
+            .order('creado_en', { ascending: false });
+
+        if (error) throw error;
+
+        res.json({ 
+            success: true, 
+            metrados: metrados || []
+        });
+
+    } catch (err) {
+        console.error('[METRADOS] Error obteniendo por filtros:', err);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error obteniendo metrados' 
+        });
+    }
+});
+
+/**
+ * DELETE /metrados/:metrado_id
+ * Elimina un metrado específico
+ */
+app.delete('/metrados/:metrado_id', async (req, res) => {
+    try {
+        const { metrado_id } = req.params;
+
+        const { error } = await supabase
+            .from('metrados')
+            .delete()
+            .eq('id', metrado_id);
+
+        if (error) throw error;
+
+        res.json({ 
+            success: true, 
+            message: 'Metrado eliminado' 
+        });
+
+    } catch (err) {
+        console.error('[METRADOS] Error eliminando:', err);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error eliminando metrado' 
+        });
+    }
+}
 
 // Pesos nominales de acero (kg/m)
 const validacionesPesoAcero = {

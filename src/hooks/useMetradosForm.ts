@@ -135,6 +135,14 @@ export const useMetradosForm = () => {
     const procesarRegistro = (): Metrado | null => {
         if (!partidaSeleccionada) return null;
 
+        const especialidadDetectada = getEspecialidadPorCodigo(partidaSeleccionada.codigo);
+        const especialidadFinal =
+            especialidadDetectada !== 'GENERAL'
+                ? especialidadDetectada
+                : especialidadSeleccionada !== 'TODAS'
+                    ? especialidadSeleccionada
+                    : 'GENERAL';
+
         const nuevoMetrado: Metrado = {
             id: Date.now().toString(),
             fecha,
@@ -158,7 +166,7 @@ export const useMetradosForm = () => {
             jerarquia: partidaSeleccionada.jerarquia,
             nivelJerarquia: partidaSeleccionada.nivel_jerarquia,
             modificacion: partidaSeleccionada.modificacion,
-            especialidad: getEspecialidadPorCodigo(partidaSeleccionada.codigo),
+            especialidad: especialidadFinal,
             autor_usuario: "UserWeb",
             created_at: Date.now(),
         };
