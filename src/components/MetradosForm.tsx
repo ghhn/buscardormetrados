@@ -4,11 +4,18 @@ import { Select } from './ui/Select';
 import type { Partida } from '../types';
 import type { TipoProyecto } from '../App';
 import { isAcero } from '../hooks/useMetradosForm';
+<<<<<<< HEAD
+import { ESPECIALIDADES_PARTIDA } from '../constants/especialidades';
+import { Save, Eraser } from 'lucide-react';
+import { HVAC_DATA } from '../data/hvacData';
+import { usePartidasCatalog } from '../hooks/usePartidasCatalog';
+=======
 import { mockPartidas } from '../data/mockDB_1';
 import { mockPartidasContingencia } from '../data/mockDB_contingencia';
 import { ESPECIALIDADES_PARTIDA, getEspecialidadPorCodigo } from '../constants/especialidades';
 import { Save, Eraser } from 'lucide-react';
 import { HVAC_DATA } from '../data/hvacData';
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 
 interface MetradosFormProps {
     state: any;
@@ -49,6 +56,11 @@ window.RenderModificacionBadge = RenderModificacionBadge;
 import { SimpleSearchInput } from './ui/SimpleSearchInput';
 
 export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGuardar, proyecto }) => {
+<<<<<<< HEAD
+    const { partidas: partidasBase, isLoading: isLoadingCatalog } = usePartidasCatalog(proyecto);
+
+=======
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>, nextId: string) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -72,10 +84,17 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
 
     const catalogoSugerencias = useMemo(() => {
         return [
+<<<<<<< HEAD
+            ...partidasBase,
+            ...state.customPartidas
+        ];
+    }, [partidasBase, state.customPartidas]);
+=======
             ...(proyecto === 'hospital' ? mockPartidas : mockPartidasContingencia),
             ...state.customPartidas
         ];
     }, [proyecto, state.customPartidas]);
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 
     const handleCrearPartida = () => {
         if (!nuevaPartidaData.codigo || !nuevaPartidaData.descripcion) return;
@@ -215,7 +234,11 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Partida (Buscador)</label>
                         <SearchCombobox
                             partidas={[
+<<<<<<< HEAD
+                                ...partidasBase,
+=======
                                 ...(proyecto === 'hospital' ? mockPartidas : mockPartidasContingencia),
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
                                 ...state.customPartidas
                             ].filter(p => {
                                 if (state.especialidadSeleccionada === 'TODAS') return true;
@@ -232,7 +255,15 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                                 actions.setAltura('');
                             }}
                             onAddPartida={() => setShowNuevaPartidaModal(true)}
+<<<<<<< HEAD
+                            disabled={isLoadingCatalog}
                         />
+                        {isLoadingCatalog && (
+                            <p className="text-[10px] text-slate-400 px-1">Cargando catálogo de partidas...</p>
+                        )}
+=======
+                        />
+>>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
                     </div>
 
                     {state.partidaSeleccionada && (
