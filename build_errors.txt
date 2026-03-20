@@ -1,0 +1,22 @@
+﻿
+> 3-entregable-web-buscador-de-metrados@0.0.0 build
+> tsc -b && vite build
+
+src/App.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/App.tsx(17,28): error TS2307: Cannot find module './components/SearchCombobox' or its corresponding type declarations.
+src/App.tsx(20,56): error TS2307: Cannot find module './data/mockData' or its corresponding type declarations.
+src/App.tsx(21,19): error TS6133: 'UserType' is declared but its value is never read.
+src/App.tsx(26,3): error TS2305: Module '"./services/authService"' has no exported member 'registerUser'.
+src/App.tsx(26,3): error TS6133: 'registerUser' is declared but its value is never read.
+src/App.tsx(191,30): error TS2554: Expected 4 arguments, but got 3.
+src/App.tsx(207,13): error TS2739: Type '{ id: `${string}-${string}-${string}-${string}-${string}`; codigo_partida: string; descripcion_partida: string; unidad: string; frente: string; bloque: string; nivel: string; cuadrilla: string; elemento: string; ... 9 more ...; proyecto: "hospital" | "contingencia"; }' is missing the following properties from type 'Metrado': autor_usuario, created_at
+src/App.tsx(222,26): error TS2339: Property 'veces' does not exist on type '{ fecha: string; frente: string; bloque: string; nivel: string; cuadrilla: string; partidaSeleccionada: Partida | null; elemento: string; detalle: string; diametro: string; cantidad: number | ""; ... 10 more ...; hvacItemType: string | null; }'.
+src/App.tsx(291,22): error TS2345: Argument of type '{ es_titulo: boolean; jerarquia: string; nivel_jerarquia: number; codigo: string; descripcion: string; unidad: string; }' is not assignable to parameter of type 'Partida'.
+  Property 'id' is missing in type '{ es_titulo: boolean; jerarquia: string; nivel_jerarquia: number; codigo: string; descripcion: string; unidad: string; }' but required in type 'Partida'.
+src/App.tsx(561,28): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/MetradosForm.tsx(1,17): error TS6133: 'useState' is declared but its value is never read.
+src/components/MetradosForm.tsx(2,1): error TS6133: 'SearchCombobox' is declared but its value is never read.
+src/components/MetradosForm.tsx(4,1): error TS6133: 'Partida' is declared but its value is never read.
+src/components/MetradosForm.tsx(8,1): error TS6133: 'HVAC_DATA' is declared but its value is never read.
+src/components/MetradosForm.tsx(9,1): error TS6133: 'SimpleSearchInput' is declared but its value is never read.
+src/components/MetradosForm.tsx(68,11): error TS6133: 'catalogoSugerencias' is declared but its value is never read.

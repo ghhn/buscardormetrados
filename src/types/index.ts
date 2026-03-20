@@ -61,9 +61,30 @@ export interface Metrado {
     modificacion?: string;
     proyecto?: string;
     especialidad?: string;
-<<<<<<< HEAD
     especialidad_id?: number | null;
     is_template?: boolean;
-=======
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
+}
+
+export type UserType = 'especialidad' | 'jefe_area' | 'residente';
+
+export interface User {
+  id: string;
+  email: string;
+  username?: string;
+  nombre: string;
+  tipo: UserType;
+  especialidad_id?: number | null;
+  especialidad?: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  user?: User;
+  error?: string;
+}
+
+export interface BasicAuthResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
 }

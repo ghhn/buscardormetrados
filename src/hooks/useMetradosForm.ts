@@ -93,14 +93,8 @@ export const useMetradosForm = () => {
             return c * longitudTotal * factorKg;
         } else if (hvacFactor !== null) {
             // Lógica HVAC
-            // El usuario quiere que en CODOS se use Longitud.
-            // La fórmula del parcial para HVAC ahora debe contemplar si Longitud está habilitada.
             const c = typeof cantidad === 'number' ? cantidad : 1;
-
-            // Si es CODO o DUCTO, consideramos la Longitud en el cálculo si se ingresó
             const l = (hvacItemType === 'CODO' || hvacItemType === 'DUCTO') && typeof longitud === 'number' ? longitud : 1;
-
-            // Ancho y Altura están bloqueados para accesorios HVAC, así que usamos 1
             const a = typeof ancho === 'number' ? ancho : 1;
             const h = typeof altura === 'number' ? altura : 1;
 
@@ -135,12 +129,16 @@ export const useMetradosForm = () => {
         setDetalle('');
         setHvacFactor(null);
         setHvacItemType(null);
+        setCantidad("");
+        setLongitud("");
+        setAncho("");
+        setAltura("");
+        setNroVeces("");
     };
 
     const procesarRegistro = (): Metrado | null => {
         if (!partidaSeleccionada) return null;
 
-<<<<<<< HEAD
         const especialidadDetectada = getEspecialidadPorCodigo(partidaSeleccionada.codigo);
         const especialidadFinal =
             especialidadDetectada !== 'GENERAL'
@@ -149,8 +147,6 @@ export const useMetradosForm = () => {
                     ? especialidadSeleccionada
                     : 'GENERAL';
 
-=======
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
         const nuevoMetrado: Metrado = {
             id: Date.now().toString(),
             fecha,
@@ -174,13 +170,10 @@ export const useMetradosForm = () => {
             jerarquia: partidaSeleccionada.jerarquia,
             nivelJerarquia: partidaSeleccionada.nivel_jerarquia,
             modificacion: partidaSeleccionada.modificacion,
-<<<<<<< HEAD
             especialidad: especialidadFinal,
-=======
-            especialidad: getEspecialidadPorCodigo(partidaSeleccionada.codigo),
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
             autor_usuario: "UserWeb",
             created_at: Date.now(),
+            proyecto: context.proyecto
         };
 
         limpiarCampos();

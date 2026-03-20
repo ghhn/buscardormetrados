@@ -1,19 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Metrado, Partida } from '../types';
+import { Metrado, Partida, User } from '../types';
 
-<<<<<<< HEAD
-interface User {
-    id: string;
-    username?: string;
-    email?: string;
-    nombre: string;
-    tipo: 'especialidad' | 'jefe_area' | 'residente';
-    especialidad_id?: number | null;
-}
-
-=======
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 interface MetradosContext {
     frente: string;
     bloque: string;
@@ -23,7 +11,6 @@ interface MetradosContext {
 }
 
 interface MetradosState {
-<<<<<<< HEAD
     // A) Usuario autenticado
     currentUser: User | null;
     
@@ -47,25 +34,11 @@ interface MetradosState {
     setContext: (context: Partial<MetradosContext>) => void;
     
     // Acciones metrados
-=======
-    // A) Contexto actual
-    context: MetradosContext;
-
-    // B) Array temporal de metrados
-    metrados: Metrado[];
-
-    // C) Partidas personalizadas
-    customPartidas: Partida[];
-
-    // Acciones
-    setContext: (context: Partial<MetradosContext>) => void;
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
     addMetrado: (metrado: Metrado) => void;
     updateMetrado: (id: string, field: keyof Metrado, value: any) => void;
     deleteMetrado: (id: string) => void;
     updateGroup: (codigo_partida: string, old_elemento: string, new_elemento: string) => void;
     addCustomPartida: (partida: Partida) => void;
-<<<<<<< HEAD
     
     // Acciones sincronización
     setMetrados: (metrados: Metrado[]) => void;
@@ -73,18 +46,13 @@ interface MetradosState {
     updateLastSyncTime: () => void;
     
     // Acciones limpiar
-=======
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
     clearAll: () => void;
 }
 
 export const useMetradosStore = create<MetradosState>()(
     persist(
         (set) => ({
-<<<<<<< HEAD
             currentUser: null,
-=======
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
             context: {
                 frente: '',
                 bloque: '',
@@ -94,7 +62,6 @@ export const useMetradosStore = create<MetradosState>()(
             },
             metrados: [],
             customPartidas: [],
-<<<<<<< HEAD
             isSyncing: false,
             lastSyncTime: null,
 
@@ -102,8 +69,6 @@ export const useMetradosStore = create<MetradosState>()(
                 set(() => ({
                     currentUser: user
                 })),
-=======
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
 
             setContext: (newContext) =>
                 set((state) => ({
@@ -141,7 +106,6 @@ export const useMetradosStore = create<MetradosState>()(
                     customPartidas: [...state.customPartidas, partida]
                 })),
 
-<<<<<<< HEAD
             setMetrados: (metrados) =>
                 set(() => ({
                     metrados
@@ -157,8 +121,6 @@ export const useMetradosStore = create<MetradosState>()(
                     lastSyncTime: new Date().toISOString()
                 })),
 
-=======
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
             clearAll: () => set({ metrados: [], customPartidas: [] }),
         }),
         {

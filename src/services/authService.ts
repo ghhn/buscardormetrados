@@ -2,26 +2,7 @@ import { supabase } from './supabaseClient';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
-export interface User {
-  id: string;
-  email: string;
-  username?: string;
-  nombre: string;
-  tipo: 'especialidad' | 'jefe_area' | 'residente';
-  especialidad_id?: number | null;
-}
-
-export interface LoginResponse {
-  success: boolean;
-  user?: User;
-  error?: string;
-}
-
-export interface BasicAuthResponse {
-  success: boolean;
-  error?: string;
-  message?: string;
-}
+import { User, LoginResponse, BasicAuthResponse } from '../types';
 
 type AuthLikeUser = {
   id: string;
@@ -43,11 +24,11 @@ function buildFallbackUser(authUser: AuthLikeUser): User {
           ? metadata.full_name
           : authUser.email || 'Usuario',
     tipo:
-      metadata.tipo === 'especialidad' ||
+      (metadata.tipo === 'especialidad' ||
       metadata.tipo === 'jefe_area' ||
       metadata.tipo === 'residente'
         ? metadata.tipo
-        : 'especialidad',
+        : 'especialidad') as any,
     especialidad_id:
       typeof metadata.especialidad_id === 'number' ? metadata.especialidad_id : null,
   };
@@ -81,10 +62,10 @@ async function getUserProfileByEmail(email: string): Promise<User | null> {
     return null;
   }
 
-  return data ? (data as User) : null;
+  return data ? (data as any as User) : null;
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
+export async function signInWithEmail(email: string, password: string): Promise<LoginResponse> {
   try {
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -116,7 +97,7 @@ export async function login(email: string, password: string): Promise<LoginRespo
   }
 }
 
-export async function getCurrentAuthenticatedUser(): Promise<User | null> {
+export async function restoreSession(): Promise<User | null> {
   try {
     const { data, error } = await supabase.auth.getUser();
 
@@ -192,7 +173,7 @@ export async function updatePassword(newPassword: string): Promise<BasicAuthResp
   }
 }
 
-export async function signOut(): Promise<void> {
+export async function signOutUser(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) {
     console.error('[AUTH] Error cerrando sesión:', error);

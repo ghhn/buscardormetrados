@@ -1,21 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { SearchCombobox } from './ui/SearchCombobox';
+import React from 'react';
 import { Select } from './ui/Select';
-import type { Partida } from '../types';
-import type { TipoProyecto } from '../App';
 import { isAcero } from '../hooks/useMetradosForm';
-<<<<<<< HEAD
-import { ESPECIALIDADES_PARTIDA } from '../constants/especialidades';
-import { Save, Eraser } from 'lucide-react';
-import { HVAC_DATA } from '../data/hvacData';
-import { usePartidasCatalog } from '../hooks/usePartidasCatalog';
-=======
-import { mockPartidas } from '../data/mockDB_1';
-import { mockPartidasContingencia } from '../data/mockDB_contingencia';
 import { ESPECIALIDADES_PARTIDA, getEspecialidadPorCodigo } from '../constants/especialidades';
 import { Save, Eraser } from 'lucide-react';
-import { HVAC_DATA } from '../data/hvacData';
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
+
+export type TipoProyecto = 'hospital' | 'contingencia';
 
 interface MetradosFormProps {
     state: any;
@@ -53,14 +42,7 @@ export const RenderModificacionBadge = (modificacionStr?: string) => {
 // @ts-ignore
 window.RenderModificacionBadge = RenderModificacionBadge;
 
-import { SimpleSearchInput } from './ui/SimpleSearchInput';
-
-export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGuardar, proyecto }) => {
-<<<<<<< HEAD
-    const { partidas: partidasBase, isLoading: isLoadingCatalog } = usePartidasCatalog(proyecto);
-
-=======
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
+const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGuardar }) => {
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>, nextId: string) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -79,115 +61,8 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
         }
     };
 
-    const [showNuevaPartidaModal, setShowNuevaPartidaModal] = useState(false);
-    const [nuevaPartidaData, setNuevaPartidaData] = useState({ codigo: '', descripcion: '', unidad: 'm' });
-
-    const catalogoSugerencias = useMemo(() => {
-        return [
-<<<<<<< HEAD
-            ...partidasBase,
-            ...state.customPartidas
-        ];
-    }, [partidasBase, state.customPartidas]);
-=======
-            ...(proyecto === 'hospital' ? mockPartidas : mockPartidasContingencia),
-            ...state.customPartidas
-        ];
-    }, [proyecto, state.customPartidas]);
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-
-    const handleCrearPartida = () => {
-        if (!nuevaPartidaData.codigo || !nuevaPartidaData.descripcion) return;
-        
-        const nuevaP: Partida = {
-            id: `custom-${Date.now()}`,
-            codigo: nuevaPartidaData.codigo,
-            descripcion: nuevaPartidaData.descripcion.toUpperCase(), // Forzamos UPPERCASE para consistencia
-            unidad: nuevaPartidaData.unidad,
-            jerarquia: [],
-            nivel_jerarquia: 1,
-            modificacion: 'PC' // "Partidas Creadas" - Etiqueta Rosa
-        };
-
-        actions.addCustomPartida(nuevaP);
-        actions.setPartidaSeleccionada(nuevaP);
-        setShowNuevaPartidaModal(false);
-        setNuevaPartidaData({ codigo: '', descripcion: '', unidad: 'm' });
-    };
-
     return (
         <div className="glass-panel rounded-2xl p-4 h-full flex flex-col gap-3 relative">
-            {/* Modal para Nueva Partida */}
-            {showNuevaPartidaModal && (
-                <div className="absolute inset-0 z-[200] bg-white/90 backdrop-blur-sm p-4 flex flex-col justify-center animate-in fade-in zoom-in-95 duration-200">
-                    <div className="glass-panel p-5 rounded-2xl shadow-xl border border-blue-100 flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-black text-blue-900 uppercase tracking-widest">Crear Nueva Partida</h3>
-                            <button onClick={() => setShowNuevaPartidaModal(false)} className="text-slate-400 hover:text-red-500 font-bold text-xs px-2 cursor-pointer">X</button>
-                        </div>
-                        
-                        <div className="space-y-3">
-                            <SimpleSearchInput 
-                                label="Código (OE.x.x.x)"
-                                placeholder="OE.1.1.2.3.99"
-                                value={nuevaPartidaData.codigo}
-                                onChange={val => setNuevaPartidaData({...nuevaPartidaData, codigo: val.toUpperCase()})}
-                                onSelect={p => setNuevaPartidaData({ ...nuevaPartidaData, codigo: p.codigo, descripcion: p.descripcion })}
-                                suggestions={catalogoSugerencias}
-                                searchField="codigo"
-                                renderItem={(p) => (
-                                    <>
-                                        <span className="text-[10px] font-bold text-slate-800 line-clamp-1">{p.descripcion}</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[8px] font-mono text-blue-500 font-bold">{p.codigo}</span>
-                                            {/* @ts-ignore */}
-                                            {window.RenderModificacionBadge && window.RenderModificacionBadge(p.modificacion)}
-                                        </div>
-                                    </>
-                                )}
-                            />
-                            
-                            <SimpleSearchInput 
-                                label="Descripción"
-                                placeholder="Ej. Suministro de materiales no catalogados..."
-                                value={nuevaPartidaData.descripcion}
-                                onChange={val => setNuevaPartidaData({...nuevaPartidaData, descripcion: val})}
-                                onSelect={p => setNuevaPartidaData({ ...nuevaPartidaData, codigo: p.codigo, descripcion: p.descripcion })}
-                                suggestions={catalogoSugerencias}
-                                searchField="descripcion"
-                                renderItem={(p) => (
-                                    <>
-                                        <span className="text-[10px] font-bold text-slate-800 line-clamp-1">{p.descripcion}</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[8px] font-mono text-blue-500 font-bold">{p.codigo}</span>
-                                            {/* @ts-ignore */}
-                                            {window.RenderModificacionBadge && window.RenderModificacionBadge(p.modificacion)}
-                                        </div>
-                                    </>
-                                )}
-                            />
-
-                            <div className="space-y-1">
-                                <label className="text-[9px] font-bold text-slate-500 uppercase">Unidad</label>
-                                <Select 
-                                    value={nuevaPartidaData.unidad}
-                                    options={['m', 'm2', 'm3', 'kg', 'und', 'glb', 'pto', 'est']}
-                                    onSelect={val => setNuevaPartidaData({...nuevaPartidaData, unidad: val})}
-                                />
-                            </div>
-                        </div>
-
-                        <button 
-                            onClick={handleCrearPartida}
-                            disabled={!nuevaPartidaData.codigo || !nuevaPartidaData.descripcion}
-                            className="w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition-all cursor-pointer"
-                        >
-                            Confirmar y Seleccionar
-                        </button>
-                    </div>
-                </div>
-            )}
-
             {/* Cabecera Compacta */}
             <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                 <h2 className="text-sm font-bold text-gray-800 tracking-tight uppercase flex items-center gap-2">
@@ -209,7 +84,6 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                             <Eraser size={10} />
                             Limpiar
                         </button>
-                        <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold border border-slate-200">v4.1</span>
                     </div>
                 </div>
             </div>
@@ -229,53 +103,6 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                             className="bg-white/50"
                         />
                     </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Partida (Buscador)</label>
-                        <SearchCombobox
-                            partidas={[
-<<<<<<< HEAD
-                                ...partidasBase,
-=======
-                                ...(proyecto === 'hospital' ? mockPartidas : mockPartidasContingencia),
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-                                ...state.customPartidas
-                            ].filter(p => {
-                                if (state.especialidadSeleccionada === 'TODAS') return true;
-                                const mapping = ESPECIALIDADES_PARTIDA.find(e => e.nombre === state.especialidadSeleccionada);
-                                if (!mapping) return true;
-                                return mapping.prefijos.some(pref => p.codigo.startsWith(pref));
-                            })}
-                            value={state.partidaSeleccionada ? state.partidaSeleccionada.descripcion : ''}
-                            onSelect={(p: Partida) => {
-                                actions.setPartidaSeleccionada(p);
-                                actions.setCantidad(1);
-                                actions.setLongitud('');
-                                actions.setAncho('');
-                                actions.setAltura('');
-                            }}
-                            onAddPartida={() => setShowNuevaPartidaModal(true)}
-<<<<<<< HEAD
-                            disabled={isLoadingCatalog}
-                        />
-                        {isLoadingCatalog && (
-                            <p className="text-[10px] text-slate-400 px-1">Cargando catálogo de partidas...</p>
-                        )}
-=======
-                        />
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-                    </div>
-
-                    {state.partidaSeleccionada && (
-                        <div className="bg-blue-50/50 px-3 py-2 rounded-xl border border-blue-100 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-1">
-                            <span className="text-[10px] text-blue-700 font-mono tracking-wider font-black">
-                                <span className="text-blue-400 opacity-50 mr-1">ID:</span> {state.partidaSeleccionada.codigo}
-                                <span className="mx-3 opacity-20">|</span>
-                                <span className="text-blue-400 opacity-50 mr-1">UNIDAD:</span> {state.partidaSeleccionada.unidad}
-                            </span>
-                            {RenderModificacionBadge(state.partidaSeleccionada.modificacion)}
-                        </div>
-                    )}
                 </div>
 
                 <div className="h-px bg-slate-100 mx-2" />
@@ -327,52 +154,15 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
 
                         <div className="space-y-1">
                             <label className="text-[9px] font-bold text-blue-600 flex items-center gap-1 uppercase tracking-wider pl-1">
-                                <span className="text-blue-400 font-black">↳</span> Detalle {state.hvacConfig ? `Especifico (${state.hvacConfig.category})` : 'Específico'}
+                                <span className="text-blue-400 font-black">↳</span> Detalle
                             </label>
-                            {state.hvacConfig ? (
-                                <SimpleSearchInput 
-                                    placeholder={state.hvacConfig.category === 'TODO' ? "Buscar ducto o accesorio..." : `Buscar ${state.hvacConfig.category.toLowerCase()}...`}
-                                    value={state.detalle}
-                                    onChange={val => actions.setDetalle(val)}
-                                    // @ts-ignore
-                                    onSelect={(item: any) => {
-                                        actions.setDetalle(item.label);
-                                        actions.setHvacFactor(item.factor);
-                                        // Determinar tipo basado en el label o la sugerencia original
-                                        const type = item.label.startsWith('TEE') ? 'TEE' : 
-                                                     item.label.startsWith('RED') ? 'REDUCCION' : 
-                                                     item.label.startsWith('CODO') ? 'CODO' : 'DUCTO';
-                                        actions.setHvacItemType(type);
-                                    }}
-                                    suggestions={
-                                        state.hvacConfig.category === 'DUCTO' 
-                                        ? HVAC_DATA.DUCTO.map(i => ({ ...i, type: 'DUCTO' }))
-                                        : state.hvacConfig.category === 'TODO'
-                                        ? [
-                                            ...HVAC_DATA.DUCTO.map(i => ({ ...i, type: 'DUCTO' })),
-                                            ...HVAC_DATA.TEE.map(i => ({ ...i, type: 'TEE' })), 
-                                            ...HVAC_DATA.REDUCCIONES.map(i => ({ ...i, type: 'REDUCCION' })), 
-                                            ...HVAC_DATA.CODO.map(i => ({ ...i, type: 'CODO' }))
-                                          ]
-                                        : [
-                                            ...HVAC_DATA.TEE.map(i => ({ ...i, type: 'TEE' })), 
-                                            ...HVAC_DATA.REDUCCIONES.map(i => ({ ...i, type: 'REDUCCION' })), 
-                                            ...HVAC_DATA.CODO.map(i => ({ ...i, type: 'CODO' }))
-                                          ]
-                                    }
-                                    // @ts-ignore
-                                    searchField="label"
-                                    className="h-8 shadow-none"
-                                />
-                            ) : (
-                                <input
-                                    type="text"
-                                    value={state.detalle}
-                                    onChange={e => actions.setDetalle(e.target.value)}
-                                    className="w-full px-4 py-1.5 border border-blue-100 rounded-xl shadow-sm text-xs border-l-4 border-l-blue-500 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none h-8"
-                                    placeholder="Mat. / Esp. / Actividad..."
-                                />
-                            )}
+                            <input
+                                type="text"
+                                value={state.detalle}
+                                onChange={e => actions.setDetalle(e.target.value)}
+                                className="w-full px-4 py-1.5 border border-blue-100 rounded-xl shadow-sm text-xs border-l-4 border-l-blue-500 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none h-8"
+                                placeholder="Mat. / Esp. / Actividad..."
+                            />
                         </div>
                     </div>
                 </div>
@@ -395,24 +185,9 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                         const fields = config.map(({ key, label, nextId }) => {
                             const valKey = key as 'cantidad' | 'longitud' | 'ancho' | 'altura';
                             
-                            // Lógica de bloqueo HVAC
-                            let isBlocked = false;
-                            if (state.hvacConfig) {
-                                if (state.hvacConfig.isAccessory) {
-                                    // TEE/RED/CODO
-                                    if (['ancho', 'altura', 'veces'].includes(key)) isBlocked = true;
-                                    
-                                    // Solo bloqueamos longitud si NO es un CODO
-                                    if (key === 'longitud' && state.hvacItemType !== 'CODO') isBlocked = true;
-                                } else if (state.hvacConfig.isDuct) {
-                                    // DUCTO: bloquea ANCHO, ALTURA, VECES (LONGITUD queda habilitada para metros lineales)
-                                    if (['ancho', 'altura', 'veces'].includes(key)) isBlocked = true;
-                                }
-                            }
-
                             return (
                                 <div key={key} className="space-y-1">
-                                    <label className={`text-[7px] font-black uppercase tracking-tighter text-center block leading-[1.1] h-[18px] flex items-end justify-center pb-0.5 ${isBlocked ? 'text-slate-300' : 'text-slate-400'}`}>
+                                    <label className={`text-[7px] font-black uppercase tracking-tighter text-center block leading-[1.1] h-[18px] flex items-end justify-center pb-0.5 text-slate-400`}>
                                         {label}
                                     </label>
                                     <input
@@ -420,43 +195,30 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                                         type="number"
                                         step="any"
                                         value={state[valKey]}
-                                        disabled={isBlocked}
                                         onChange={e => actions[`set${key.charAt(0).toUpperCase() + key.slice(1)}`](e.target.value === "" ? "" : Number(e.target.value))}
                                         onKeyDown={e => handleKeyDown(e, nextId)}
                                         onFocus={e => e.target.select()}
-                                        className={`w-full px-1 py-1 border rounded text-xs text-right font-mono font-bold outline-none transition-colors ${
-                                            isBlocked 
-                                            ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed' 
-                                            : 'border-slate-200 text-slate-700 bg-white focus:border-blue-500'
-                                        }`}
-                                        placeholder={isBlocked ? "N/A" : "-"}
+                                        className={`w-full px-1 py-1 border rounded text-xs text-right font-mono font-bold outline-none transition-colors border-slate-200 text-slate-700 bg-white focus:border-blue-500`}
+                                        placeholder="-"
                                     />
                                 </div>
                             );
                         });
 
-                        // El nroVeces también se bloquea para accesorios/ductos según el requisito ("VECES" bloqueado)
-                        const isVecesBlocked = !!state.hvacConfig;
-
                         const vecesField = (
                             <div key="veces" className="space-y-1">
-                                <label className={`text-[9px] font-black uppercase tracking-tighter text-center block ${isVecesBlocked ? 'text-slate-300' : 'text-slate-400'}`}>
+                                <label className={`text-[9px] font-black uppercase tracking-tighter text-center block text-slate-400`}>
                                     VECES
                                 </label>
                                 <input
                                     id="input-veces"
                                     type="number"
                                     value={state.nroVeces}
-                                    disabled={isVecesBlocked}
                                     onChange={e => actions.setNroVeces(e.target.value === "" ? "" : Number(e.target.value))}
                                     onKeyDown={e => handleKeyDown(e, 'submit')}
                                     onFocus={e => e.target.select()}
-                                    className={`w-full px-1 py-1 border rounded text-xs text-right font-mono font-bold outline-none transition-colors ${
-                                        isVecesBlocked 
-                                        ? 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed' 
-                                        : 'border-slate-200 text-slate-700 bg-white focus:border-blue-500'
-                                    }`}
-                                    placeholder={isVecesBlocked ? "1" : "1"}
+                                    className={`w-full px-1 py-1 border rounded text-xs text-right font-mono font-bold outline-none transition-colors border-slate-200 text-slate-700 bg-white focus:border-blue-500`}
+                                    placeholder="1"
                                 />
                             </div>
                         );
@@ -495,11 +257,6 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total</span>
                             <span className="text-xl font-black text-blue-900 font-mono -mt-1">
                                 {state.total.toFixed(2)}
-                                {state.hvacFactor !== null && (
-                                    <span className="text-[10px] text-blue-400 ml-1 font-bold">
-                                        (x{state.hvacFactor.toFixed(3)})
-                                    </span>
-                                )}
                             </span>
                         </div>
                     </div>
@@ -521,3 +278,5 @@ export const MetradosForm: React.FC<MetradosFormProps> = ({ state, actions, onGu
         </div>
     );
 };
+
+export default MetradosForm;

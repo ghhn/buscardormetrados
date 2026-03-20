@@ -1,202 +1,93 @@
-<<<<<<< HEAD
-import React, { useState, useMemo } from 'react';
-=======
-<<<<<<< HEAD
-import { useEffect, useState } from 'react';
-import { Building2, LogOut, Save, Stethoscope, AlertTriangle, UserCircle2 } from 'lucide-react';
-import { MetradosForm } from './components/MetradosForm';
-import { MetradosTable } from './components/MetradosTable';
-import { useMetradosForm } from './hooks/useMetradosForm';
-import { useMetradosStore } from './store/useMetradosStore';
-import type { Metrado } from './types';
-import {
-  clearSessionFromLocalStorage,
-  getCurrentAuthenticatedUser,
-  getSessionFromLocalStorage,
-  login,
-  requestPasswordReset,
-  saveSessionToLocalStorage,
-  signOut,
-  updatePassword,
-} from './services/authService';
-import { loadMetradosByUser, saveMetradosToDatabase } from './services/metradosService';
-import { supabase } from './services/supabaseClient';
-
-export type TipoProyecto = 'hospital' | 'contingencia';
-
-=======
-import { useState, useEffect } from 'react';
-import { MetradosForm } from './components/MetradosForm';
->>>>>>> main
-import { MetradosTable } from './components/MetradosTable';
-import { useMetradosForm } from './hooks/useMetradosForm';
-import type { Metrado } from './types';
-import { Building2, Stethoscope, AlertTriangle, Save, RotateCcw } from 'lucide-react';
-import { useMetradosStore } from './store/useMetradosStore';
+import { useState, useEffect, useMemo } from 'react';
+import { 
+  Building2, 
+  Save, 
+  UserCircle2, 
+  LogOut, 
+  Stethoscope, 
+  AlertTriangle,
+  RotateCcw,
+  Building,
+  CheckCircle2,
+  XCircle,
+  Info
+} from 'lucide-react';
+import MetradosForm from './components/MetradosForm';
+import MetradosTable from './components/MetradosTable';
 import { SearchCombobox } from './components/ui/SearchCombobox';
-import { mockPartidas } from './data/mockDB_1';
-import { mockPartidasContingencia } from './data/mockDB_contingencia';
+import { useMetradosForm } from './hooks/useMetradosForm';
+import { useMetradosStore } from './store/useMetradosStore';
+import { usePartidasCatalog } from './hooks/usePartidasCatalog';
+import { Metrado, Partida } from './types';
+import { 
+  signInWithEmail, 
+  signOutUser, 
+  restoreSession, 
+  requestPasswordReset,
+  updatePassword
+} from './services/authService';
+import { saveMetrados, loadMetradosByUser } from './services/metradosService';
 
-// Tipo de proyecto disponible en el sistema (Hospital o Contingencia)
-export type TipoProyecto = 'hospital' | 'contingencia';
-
-<<<<<<< HEAD
-=======
-type UserType = 'especialidad' | 'jefe_area' | 'residente';
-
-type User = {
-  id: string;
-  name: string;
-  type: UserType;
-  specialty?: string;
-  specialtyId?: number | null;
-};
-
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-type Proyecto = {
-  id: number;
-  nombre: string;
-  tipo: 'hospital' | 'contingencia' | string;
-};
-
-<<<<<<< HEAD
 function App() {
   const { state, actions } = useMetradosForm();
-  const {
-    metrados,
-    context,
-    setContext,
-    addMetrado,
-    updateMetrado,
-    deleteMetrado,
-    updateGroup,
+  const { 
+    metrados, 
+    context, 
+    setContext, 
+    addMetrado, 
+    updateMetrado, 
+    deleteMetrado, 
+    updateGroup, 
+    addCustomPartida,
     currentUser,
     setCurrentUser,
-    setSyncing,
     isSyncing,
+    setSyncing,
     lastSyncTime,
     updateLastSyncTime,
+    customPartidas
   } = useMetradosStore();
 
-  const [toast, setToast] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
-  const [, setProyectos] = useState<Proyecto[]>([]);
-  const [, setProjectLookup] = useState<Record<string, number>>({});
+  const { partidas: partidasBase } = usePartidasCatalog(context.proyecto);
 
+  // Estados locales
+  const [toast, setToast] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  
+  // Estados para Login
   const [selectedEmail, setSelectedEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-  const [isSendingReset, setIsSendingReset] = useState(false);
+  
+  // Estados para Recuperación de Contraseña
   const [recoveryMode, setRecoveryMode] = useState(false);
   const [recoveryPassword, setRecoveryPassword] = useState('');
   const [recoveryConfirmPassword, setRecoveryConfirmPassword] = useState('');
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
   const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-
-  useEffect(() => {
-    const restoreSession = async () => {
-      const savedUser = getSessionFromLocalStorage();
-      if (savedUser) {
-        setCurrentUser(savedUser);
-        await loadUserMetrados(savedUser.id);
-        return;
-      }
-
-      const authUser = await getCurrentAuthenticatedUser();
-      if (authUser) {
-        saveSessionToLocalStorage(authUser);
-        setCurrentUser(authUser);
-        await loadUserMetrados(authUser.id);
-      }
-    };
-
-    void restoreSession();
-  }, [setCurrentUser]);
-=======
-const LOGIN_USERS: User[] = [
-  { id: 'especialidad_estructuras', name: 'Especialidad Estructuras', type: 'especialidad', specialty: 'ESTRUCTURAS' },
-  { id: 'especialidad_arquitectura', name: 'Especialidad Arquitectura', type: 'especialidad', specialty: 'ARQUITECTURA' },
-  { id: 'especialidad_sanitarias', name: 'Especialidad Instalaciones Sanitarias', type: 'especialidad', specialty: 'INSTALACIONES SANITARIAS' },
-  { id: 'especialidad_electricas', name: 'Especialidad Eléctricas', type: 'especialidad', specialty: 'ELÉCTRICAS' },
-  { id: 'especialidad_electromecanicas', name: 'Especialidad Electromecánicas', type: 'especialidad', specialty: 'ELECTROMECÁNICAS' },
-  { id: 'especialidad_arqueologia', name: 'Especialidad Arqueología', type: 'especialidad', specialty: 'ARQUEOLOGÍA' },
-  { id: 'especialidad_seguridad', name: 'Especialidad Seguridad', type: 'especialidad', specialty: 'SEGURIDAD' },
-  { id: 'especialidad_obras_provisionales', name: 'Especialidad Obras Provisionales', type: 'especialidad', specialty: 'OBRAS PROVICIONALES' },
-  { id: 'jefe_area_1', name: 'Jefe de Área 1', type: 'jefe_area' },
-  { id: 'jefe_area_2', name: 'Jefe de Área 2', type: 'jefe_area' },
-  { id: 'residente', name: 'Residente', type: 'residente' },
-];
-
->>>>>>> main
-function App() {
-  const { state, actions } = useMetradosForm();
-  const { metrados, context, setContext, addMetrado, updateMetrado, deleteMetrado, updateGroup, addCustomPartida } = useMetradosStore();
-  const [toast, setToast] = useState<string | null>(null);
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   // Estados para el Modal de Nueva Partida
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPartida, setNewPartida] = useState({ codigo: '', descripcion: '', unidad: 'und' });
 
-<<<<<<< HEAD
-  const handleGuardar = () => {
-=======
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-
-
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-
+  // Restaurar sesión al cargar
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-<<<<<<< HEAD
-        const defaultProjects: Proyecto[] = [
-          { id: 1, nombre: 'Hospital', tipo: 'hospital' },
-          { id: 2, nombre: 'Contingencia', tipo: 'contingencia' },
-        ];
-
-        setProyectos(defaultProjects);
-
-        const lookup: Record<string, number> = {};
-        defaultProjects.forEach((project) => {
-          lookup[project.tipo] = project.id;
-        });
-        setProjectLookup(lookup);
-      } catch (err) {
-        console.error('Error cargando proyectos:', err);
+    const init = async () => {
+      const user = await restoreSession();
+      if (user) {
+        setCurrentUser(user);
+        await loadUserMetrados(user.id);
       }
-    };
-
-    void loadProjects();
-  }, []);
-
-  useEffect(() => {
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const queryParams = new URLSearchParams(window.location.search);
-    const hasRecoveryToken =
-      hashParams.has('access_token') ||
-      hashParams.get('type') === 'recovery' ||
-      queryParams.get('type') === 'recovery';
-
-    if (hasRecoveryToken) {
-      setRecoveryMode(true);
-      setRecoveryMessage('Define una nueva contraseña para tu cuenta.');
-      setLoginError(null);
-    }
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      
+      // Manejar hash de recuperación
+      if (window.location.hash && window.location.hash.includes('type=recovery')) {
         setRecoveryMode(true);
-        setRecoveryMessage('Define una nueva contraseña para tu cuenta.');
-        setLoginError(null);
       }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
     };
+    init();
   }, []);
 
   const loadUserMetrados = async (userId: string) => {
@@ -213,661 +104,262 @@ function App() {
     }
   };
 
-  const handleLogin = async () => {
-    const email = selectedEmail.trim();
-
-    if (!email) {
-      setLoginError('Ingrese un email.');
-      return;
-    }
-
-=======
-        const resp = await fetch(`${API_BASE}/api/proyectos`);
-        if (!resp.ok) return;
-        const data = await resp.json();
-        setProyectos(data);
-        const lookup: Record<string, number> = {};
-        data.forEach((p: Proyecto) => {
-          lookup[p.tipo] = p.id;
-        });
-        setProjectLookup(lookup);
-      } catch (err) {
-        console.error('No se pudo cargar proyectos', err);
-      }
-    };
-    loadProjects();
-  }, []);
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast(message);
+    setToastType(type);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const handleLogin = async () => {
-    const username = selectedUserId;
-    if (!username) {
-      setLoginError('Seleccione o escriba un usuario.');
-      return;
-    }
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-    if (!loginPassword) {
-      setLoginError('Ingrese contraseña.');
-      return;
-    }
-
-<<<<<<< HEAD
+    if (!selectedEmail || !loginPassword) return;
+    
     setIsLoggingIn(true);
     setLoginError(null);
-
     try {
-      const response = await login(email, loginPassword);
-
-      if (!response.success) {
-        setLoginError(response.error || 'Credenciales inválidas');
-        return;
-      }
-
-      if (response.user) {
-        saveSessionToLocalStorage(response.user);
+      const response = await signInWithEmail(selectedEmail, loginPassword);
+      if (response.success && response.user) {
         setCurrentUser(response.user);
-        setSelectedEmail('');
-        setLoginPassword('');
-        setLoginError(null);
-        showToast(`Bienvenido ${response.user.nombre}`, 'success');
         await loadUserMetrados(response.user.id);
+      } else {
+        setLoginError(response.error || 'Error al iniciar sesión');
       }
     } catch (err) {
-      console.error('Error en login:', err);
-      setLoginError('Error de conexión con Supabase');
+      setLoginError('Ocurrió un error inesperado');
     } finally {
       setIsLoggingIn(false);
-=======
-    try {
-      const response = await fetch(`${API_BASE}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password: loginPassword }),
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        setLoginError(err.error || 'Credenciales inválidas');
-        return;
-      }
-      const userData = await response.json();
-      const selectedMeta = LOGIN_USERS.find((u) => u.id === username);
-      const user: User = {
-        id: userData.id,
-        name: userData.nombre || userData.username,
-        type: userData.tipo,
-        specialty: selectedMeta?.specialty,
-        specialtyId: userData.especialidad_id || null,
-      };
-      setCurrentUser(user);
-      localStorage.setItem('metrados_current_user', JSON.stringify(user));
-      setLoginError(null);
-    } catch (err) {
-      console.error(err);
-      setLoginError('No se pudo conectar al servidor de login');
     }
   };
 
-  const handleRegister = async () => {
-    setRegisterError(null);
-    setRegisterSuccess(null);
-
-    if (!registerUsername || !registerNombre || !registerPassword || !registerTipo) {
-      setRegisterError('Complete todos los campos obligatorios.');
-      return;
-    }
-    if (registerTipo === 'especialidad' && !registerEspecialidad) {
-      setRegisterError('Seleccione una especialidad para usuarios de tipo especialidad.');
-      return;
-    }
-
-    try {
-      const payload: any = {
-        username: registerUsername,
-        nombre: registerNombre,
-        tipo: registerTipo,
-        password: registerPassword,
-        especialidad_id: null,
-        especialidad_nombre: registerTipo === 'especialidad' ? registerEspecialidad : null,
-      };
-
-      const response = await fetch(`${API_BASE}/api/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        setRegisterError(err.error || 'Error al registrar usuario');
-        return;
-      }
-
-      const data = await response.json();
-      setRegisterSuccess('Usuario registrado con éxito. Ahora inicie sesión.');
-      setIsRegistering(false);
-      setSelectedUserId(registerUsername);
-      setLoginPassword('');
-      setRegisterUsername('');
-      setRegisterNombre('');
-      setRegisterPassword('');
-      setRegisterTipo('especialidad');
-      setRegisterEspecialidad('ESTRUCTURAS');
-    } catch (err) {
-      console.error(err);
-      setRegisterError('No se pudo conectar al servidor para registrar');
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-    }
-  };
-
-  const handleLogout = () => {
-<<<<<<< HEAD
-    clearSessionFromLocalStorage();
+  const handleLogout = async () => {
+    await signOutUser();
     setCurrentUser(null);
-    setSelectedEmail('');
-    setLoginPassword('');
-    setLoginError(null);
-    setRecoveryMode(false);
-    void signOut();
-    showToast('Sesión cerrada', 'info');
+    // Limpiar estado local si es necesario
   };
 
   const handlePasswordResetRequest = async () => {
-    const email = selectedEmail.trim();
-
-    if (!email) {
-      setLoginError('Ingrese su email para enviar el enlace de recuperación.');
+    if (!selectedEmail) {
+      setLoginError('Ingrese su email para enviar el enlace de recuperación');
       return;
     }
-
     setIsSendingReset(true);
     setLoginError(null);
-
     try {
-      const response = await requestPasswordReset(email);
-
-      if (!response.success) {
-        setLoginError(response.error || 'No se pudo enviar el correo de recuperación');
-        return;
+      const response = await requestPasswordReset(selectedEmail);
+      if (response.success) {
+        setRecoveryMessage('Se ha enviado un enlace de recuperación a tu correo.');
+      } else {
+        setLoginError(response.error || 'Error al enviar el enlace');
       }
-
-      showToast(
-        response.message || 'Revisa tu correo para continuar con el cambio de contraseña.',
-        'info'
-      );
-      setLoginError(
-        'Si la cuenta fue creada solo con Google, ese correo puede no permitir reset por contraseña hasta definir una clave propia.'
-      );
     } catch (err) {
-      console.error('Error solicitando recuperación:', err);
-      setLoginError('Error de conexión al enviar el correo de recuperación');
+      setLoginError('Error inesperado al solicitar recuperación');
     } finally {
       setIsSendingReset(false);
     }
   };
 
   const handlePasswordUpdate = async () => {
-    if (!recoveryPassword) {
-      setRecoveryError('Ingrese una nueva contraseña.');
+    if (!recoveryPassword || recoveryPassword !== recoveryConfirmPassword) {
+      setRecoveryError('Las contraseñas no coinciden');
       return;
     }
-
     if (recoveryPassword.length < 6) {
-      setRecoveryError('La nueva contraseña debe tener al menos 6 caracteres.');
-      return;
-    }
-
-    if (recoveryPassword !== recoveryConfirmPassword) {
-      setRecoveryError('Las contraseñas no coinciden.');
+      setRecoveryError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
     setIsUpdatingPassword(true);
     setRecoveryError(null);
-
     try {
       const response = await updatePassword(recoveryPassword);
-
-      if (!response.success) {
-        setRecoveryError(response.error || 'No se pudo actualizar la contraseña.');
-        return;
+      if (response.success) {
+        setRecoveryMessage('Contraseña actualizada con éxito. Ya puedes iniciar sesión.');
+        setRecoveryMode(false);
+        setRecoveryPassword('');
+        setRecoveryConfirmPassword('');
+      } else {
+        setRecoveryError(response.error || 'Error al actualizar la contraseña');
       }
-
-      setRecoveryMode(false);
-      setRecoveryPassword('');
-      setRecoveryConfirmPassword('');
-      setRecoveryMessage(response.message || 'Contraseña actualizada correctamente.');
-      await signOut();
-      showToast('Contraseña actualizada. Ya puedes iniciar sesión.', 'success');
     } catch (err) {
-      console.error('Error actualizando contraseña:', err);
-      setRecoveryError('Error de conexión al actualizar la contraseña.');
+      setRecoveryError('Error inesperado al actualizar contraseña');
     } finally {
       setIsUpdatingPassword(false);
     }
   };
 
   const handleSaveMetrados = async () => {
-    if (!currentUser || !currentUser.id) {
-      setLoginError('Debe estar autenticado para guardar metrados');
-      return;
-    }
-
-    if (metrados.length === 0) {
-      showToast('No hay metrados para guardar', 'info');
-      return;
-    }
-
+    if (!currentUser) return;
     setSyncing(true);
     try {
-      const response = await saveMetradosToDatabase(
-        metrados,
-        currentUser.id,
-        context.proyecto,
-        currentUser.especialidad_id || 1
-      );
-
+      const response = await saveMetrados(metrados, currentUser.id, context.proyecto, currentUser.especialidad_id || 0);
       if (response.success) {
-        showToast(`${response.saved} metrados guardados exitosamente`, 'success');
+        showToast('Metrados sincronizados con Supabase', 'success');
         updateLastSyncTime();
       } else {
-        showToast(response.error || 'Error guardando metrados', 'error');
+        showToast(response.error || 'Error al sincronizar', 'error');
       }
     } catch (err) {
-      console.error('Error guardando metrados:', err);
-      showToast('Error de conexión', 'error');
+      showToast('Error de red al sincronizar', 'error');
     } finally {
       setSyncing(false);
     }
   };
 
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setToast(message);
-    setToastType(type);
-    setTimeout(() => setToast(null), 3000);
-=======
-    setCurrentUser(null);
-    setSelectedUserId('');
-    setLoginPassword('');
-    setLoginError(null);
-    localStorage.removeItem('metrados_current_user');
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-  };
+  const handleGuardar = () => {
+    if (state.partidaSeleccionada) {
+      const nuevo: Metrado = {
+        id: crypto.randomUUID(),
+        codigo_partida: state.partidaSeleccionada.codigo,
+        descripcion_partida: state.partidaSeleccionada.descripcion,
+        unidad: state.partidaSeleccionada.unidad,
+        frente: state.frente,
+        bloque: state.bloque,
+        nivel: state.nivel,
+        cuadrilla: state.cuadrilla,
+        elemento: state.elemento,
+        detalle: state.detalle,
+        cantidad: state.cantidad || 0,
+        longitud_area: state.longitud || 0,
+        ancho_empalme: state.ancho || 0,
+        altura_gancho: state.altura || 0,
+        nro_veces: state.nroVeces || 1,
+        parcial: 0,
+        total: 0,
+        fecha: state.fecha,
+        proyecto: context.proyecto,
+        autor_usuario: currentUser ? currentUser.nombre : "Usuario",
+        created_at: Date.now()
+      };
 
-  const handleGuardar = async () => {
->>>>>>> main
-    const nuevo = actions.procesarRegistro();
-    if (nuevo) {
-      // El metrado hereda el proyecto activo al momento de registrarse
-      const nuevoConProy = { ...nuevo, proyecto: context.proyecto };
-      addMetrado(nuevoConProy);
-<<<<<<< HEAD
-      showToast(`Metrado guardado: ${nuevo.codigo_partida}`, 'success');
-=======
-      setToast(`Metrado guardado: ${nuevo.codigo_partida}`);
-      setTimeout(() => setToast(null), 3000);
-<<<<<<< HEAD
-=======
+      // Cálculos
+      const val = (n: any) => (n === '' || n === undefined || n === null ? 0 : parseFloat(String(n)));
+      const cant = val(nuevo.cantidad);
+      const largo = val(nuevo.longitud_area);
+      const ancho = val(nuevo.ancho_empalme);
+      const altura = val(nuevo.altura_gancho);
+      const veces = val(nuevo.nro_veces);
 
-      try {
-        const proyectoId = projectLookup[context.proyecto] ?? (context.proyecto === 'hospital' ? 1 : 2);
-        const resp = await fetch(`${API_BASE}/api/metrados`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...nuevoConProy,
-            autor_usuario: currentUser?.id ?? null,
-            proyecto_id: proyectoId,
-            especialidad_id: currentUser?.specialtyId ?? null,
-          }),
-        });
-        if (!resp.ok) {
-          console.error('Error guardando en backend', await resp.text());
-          return;
-        }
-      } catch (err) {
-        console.error('Error backend guardar', err);
-      }
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
->>>>>>> main
+      let factors = [cant, largo, ancho, altura].filter(v => v > 0);
+      let parcial = factors.length > 0 ? factors.reduce((acc, v) => acc * v, 1) : 0;
+      nuevo.parcial = parcial;
+      nuevo.total = parcial * (veces || 1);
+
+      addMetrado(nuevo);
+      showToast('Metrado registrado localmente', 'success');
     }
   };
 
   const handleDeleteMetrado = (id: string) => {
     deleteMetrado(id);
-<<<<<<< HEAD
     showToast('Registro eliminado', 'info');
   };
 
   const handleUpdateMetrado = (id: string, field: keyof Metrado, value: unknown) => {
-    const metradoOriginal = metrados.find((metrado) => metrado.id === id);
-    if (!metradoOriginal) {
-      return;
-    }
-
-    if (['cantidad', 'longitud_area', 'ancho_empalme', 'altura_gancho', 'nro_veces'].includes(field as string)) {
-      const parseVal = (input: unknown) => {
-        if (input === '' || input === undefined || input === null) {
-          return null;
-        }
-        const num = parseFloat(String(input));
-        return Number.isNaN(num) ? null : num;
-      };
-
-      const finalMetrado = { ...metradoOriginal, [field]: value };
-      const cant = parseVal(finalMetrado.cantidad);
-      const largo = parseVal(finalMetrado.longitud_area);
-      const ancho = parseVal(finalMetrado.ancho_empalme);
-      const altura = parseVal(finalMetrado.altura_gancho);
-=======
-    setToast('Registro eliminado exitosamente');
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const handleUpdateMetrado = (id: string, field: keyof Metrado, value: any) => {
-    // Primero calculamos el nuevo valor para campos numéricos si es necesario
-    const metradoOriginal = metrados.find(m => m.id === id);
+    const metradoOriginal = metrados.find((m) => m.id === id);
     if (!metradoOriginal) return;
 
-    let finalMetrado = { ...metradoOriginal, [field]: value };
-
+    const finalMetrado = { ...metradoOriginal, [field]: value };
+    
+    // Recalcular si es campo numérico
     if (['cantidad', 'longitud_area', 'ancho_empalme', 'altura_gancho', 'nro_veces'].includes(field as string)) {
-      const parseVal = (v: any) => {
-        if (v === "" || v === undefined || v === null) return null;
-        const num = parseFloat(String(v));
-        return isNaN(num) ? null : num;
-      };
+      const val = (n: any) => (n === '' || n === undefined || n === null ? 0 : parseFloat(String(n)));
+      const cant = val(finalMetrado.cantidad);
+      const largo = val(finalMetrado.longitud_area);
+      const ancho = val(finalMetrado.ancho_empalme);
+      const altura = val(finalMetrado.altura_gancho);
+      const veces = val(finalMetrado.nro_veces);
 
-      const cant = parseVal(finalMetrado.cantidad);
-      const l = parseVal(finalMetrado.longitud_area);
-      const a = parseVal(finalMetrado.ancho_empalme);
-      const h = parseVal(finalMetrado.altura_gancho);
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-
-      let product = 1;
-      let hasFactors = false;
-
-<<<<<<< HEAD
-      [cant, largo, ancho, altura].forEach((val) => {
-=======
-      [cant, l, a, h].forEach(val => {
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-        if (val !== null) {
-          product *= val;
-          hasFactors = true;
-        }
-      });
-
-      finalMetrado.parcial = hasFactors ? product : 0;
-      const veces = parseVal(finalMetrado.nro_veces);
-      finalMetrado.total = finalMetrado.parcial * (veces !== null ? veces : 1);
-
-<<<<<<< HEAD
-      updateMetrado(id, field, value);
-      updateMetrado(id, 'parcial', finalMetrado.parcial);
-      updateMetrado(id, 'total', finalMetrado.total);
-      return;
-    }
-
-    updateMetrado(id, field, value);
-=======
-      // Actualizamos todo el metrado en el store si hubo cambios en los cálculos
+      let factors = [cant, largo, ancho, altura].filter(v => v > 0);
+      let parcial = factors.length > 0 ? factors.reduce((acc, v) => acc * v, 1) : 0;
+      finalMetrado.parcial = parcial;
+      finalMetrado.total = parcial * (veces || 1);
+      
       updateMetrado(id, field, value);
       updateMetrado(id, 'parcial', finalMetrado.parcial);
       updateMetrado(id, 'total', finalMetrado.total);
     } else {
       updateMetrado(id, field, value);
     }
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
   };
 
   const handleAddCustomPartida = () => {
     if (!newPartida.codigo || !newPartida.descripcion) {
-      alert("Por favor completa el código y la descripción");
+      showToast("Faltan datos de la partida", "error");
       return;
     }
-    const created: any = {
+    const created: Partida = {
+      id: `cp-${Date.now()}`,
       ...newPartida,
       es_titulo: false,
-      jerarquia: newPartida.codigo,
-      nivel_jerarquia: newPartida.codigo.split('.').length,
-      modificacion: 'PC' // Partida Creada
+      modificacion: 'PC-NUEVA',
+      proyecto: context.proyecto
     };
     addCustomPartida(created);
-    actions.setPartidaSeleccionada(created);
+    actions.setPartidaSeleccionada(created as any);
     setIsModalOpen(false);
     setNewPartida({ codigo: '', descripcion: '', unidad: 'und' });
-    setToast("Partida personalizada añadida exitosamente");
-    setTimeout(() => setToast(null), 3000);
+    showToast("Partida personalizada añadida", "success");
   };
 
   const handleUpdateGroup = (codigoPartida: string, oldElemento: string, newElemento: string) => {
     updateGroup(codigoPartida, oldElemento, newElemento);
   };
 
-<<<<<<< HEAD
-  const metradosFiltrados = metrados.filter(
-    (metrado) => !metrado.proyecto || metrado.proyecto === context.proyecto
-  );
-=======
-  // Filtra los metrados mostrados según el proyecto activo
-  const metradosFiltrados = metrados.filter(m => !m.proyecto || m.proyecto === context.proyecto);
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
+  const metradosFiltrados = useMemo(() => {
+    return metrados.filter(m => !m.proyecto || m.proyecto === context.proyecto);
+  }, [metrados, context.proyecto]);
 
-<<<<<<< HEAD
-  // Catálogo para el buscador superior
   const catalogoBuscador = useMemo(() => {
-    const base = context.proyecto === 'hospital' ? mockPartidas : mockPartidasContingencia;
-    return [...base, ...state.customPartidas];
-  }, [context.proyecto, state.customPartidas]);
+    return [...partidasBase, ...customPartidas];
+  }, [partidasBase, customPartidas]);
 
-  return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative max-w-[1600px] mx-auto">
-
-      {/* Header & Context Bar */}
-      <header className="flex flex-col gap-6">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary text-white p-2.5 rounded-xl shadow-lg shadow-primary/30">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Metrados Belempampa <span className="text-primary/40 text-lg font-medium ml-1">v5.0</span>
-              </h1>
-              <p className="text-sm text-gray-500 font-medium">Plataforma de Ingeniería Aplicada</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* ─── Selector de Especialidad ─── */}
-            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-              <button
-                onClick={() => { setContext({ proyecto: 'hospital' }); actions.setPartidaSeleccionada(null); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${context.proyecto === 'hospital'
-                  ? 'bg-blue-50 text-blue-700 shadow-sm border border-blue-100'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                  }`}
-              >
-                <Stethoscope className="w-4 h-4" />
-                Hospital
-              </button>
-              <button
-                onClick={() => { setContext({ proyecto: 'contingencia' }); actions.setPartidaSeleccionada(null); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${context.proyecto === 'contingencia'
-                  ? 'bg-amber-50 text-amber-700 shadow-sm border border-amber-100'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                  }`}
-              >
-                <AlertTriangle className="w-4 h-4" />
-                Contingencia
-              </button>
-            </div>
-
-            <div className="h-8 w-px bg-slate-200" />
-
-            {/* Botón de Guardado Rápido */}
-            <button
-              onClick={handleGuardar}
-              disabled={!state.partidaSeleccionada}
-              className={`px-8 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 flex items-center gap-2 ${state.partidaSeleccionada
-                  ? 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-                }`}
-            >
-              <Save className="w-4 h-4" />
-              Registrar Metrado
-            </button>
-          </div>
-        </div>
-
-        {/* ─── CONTEXT BAR & SEARCH (Metadata Navigation) ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          
-          {/* Selector de Partida Principal */}
-          <div className="lg:col-span-5 flex flex-col gap-1.5 border-r border-slate-100 pr-4">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Buscador de Partida Matriz</label>
-            <SearchCombobox
-              partidas={catalogoBuscador}
-              value={state.partidaSeleccionada ? state.partidaSeleccionada.descripcion : ''}
-              onSelect={(p) => {
-                actions.setPartidaSeleccionada(p);
-                actions.setCantidad(1);
-                actions.setLongitud('');
-                actions.setAncho('');
-                actions.setAltura('');
-              }}
-              onAddPartida={() => setIsModalOpen(true)}
-              placeholder="Buscar por código o descripción..."
-            />
-            {state.partidaSeleccionada && (
-              <div className="flex items-center gap-2 mt-1 px-2 text-slate-500">
-                <span className="text-[9px] font-mono font-black text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                  {state.partidaSeleccionada.codigo}
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-tighter">
-                  Unidad: {state.partidaSeleccionada.unidad}
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-tighter">
-                  Tipo: {state.partidaSeleccionada.unidad === 'kg' ? 'ACERO' : 'ESTÁNDAR'}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Metadata Grid */}
-          <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-5 gap-4 h-full items-end">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Fecha</label>
-              <input
-                type="date"
-                value={state.fecha}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setFecha(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Frente</label>
-              <input
-                type="text"
-                placeholder="F1"
-                value={state.frente}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setFrente(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Bloque</label>
-              <input
-                type="text"
-                placeholder="B-01"
-                value={state.bloque}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setBloque(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Nivel</label>
-              <input
-                type="text"
-                placeholder="N+0.00"
-                value={state.nivel}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setNivel(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5 relative group">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Cuadrilla</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="C-01"
-                  value={state.cuadrilla}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => actions.setCuadrilla(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all pr-10"
-                />
-                <button 
-                  onClick={() => actions.limpiarCampos()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-300 hover:text-red-400 transition-colors"
-                  title="Reiniciar Campos"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-=======
+  // Si no hay usuario, mostrar login
   if (!currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-        <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-lg p-6">
-<<<<<<< HEAD
-          <div className="flex items-center gap-2 text-slate-700 mb-6">
-            <UserCircle2 className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold">Buscador de Metrados</h2>
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-lg p-8">
+          <div className="flex items-center gap-3 text-slate-800 mb-8 border-b pb-4">
+            <div className="bg-blue-600 p-2 rounded-lg text-white">
+              <Building className="w-6 h-6" />
+            </div>
+            <h2 className="text-2xl font-black tracking-tight uppercase">Buscador Metrados</h2>
           </div>
 
-          <p className="text-sm text-slate-500 mb-4">
-            {recoveryMode
-              ? 'Completa tu nueva contraseña para recuperar el acceso.'
-              : 'Ingrese sus credenciales para acceder al sistema.'}
-          </p>
-
           {recoveryMessage && (
-            <div className="mb-4 text-sm text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-100">
+            <div className="mb-6 p-4 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 flex gap-3 text-sm">
+              <Info className="w-5 h-5 flex-shrink-0" />
               {recoveryMessage}
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-5">
             {!recoveryMode ? (
               <>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Email</label>
                   <input
                     value={selectedEmail}
                     onChange={(e) => setSelectedEmail(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && void handleLogin()}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ingrese su email"
+                    className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-medium"
+                    placeholder="ejemplo@metrados.local"
                   />
-                  <p className="text-xs text-slate-400 mt-1">
-                    Ej: estructuras@metrados.local, residente@metrados.local
-                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Contraseña</label>
                   <input
                     type="password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && void handleLogin()}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ingrese contraseña"
+                    className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-medium"
+                    placeholder="••••••••"
                   />
                 </div>
 
                 {loginError && (
-                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                  <div className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 flex gap-2 text-xs font-bold items-center animate-in fade-in zoom-in-95">
+                    <XCircle className="w-4 h-4" />
                     {loginError}
                   </div>
                 )}
@@ -875,52 +367,65 @@ function App() {
                 <button
                   disabled={!selectedEmail || !loginPassword || isLoggingIn}
                   onClick={() => void handleLogin()}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg disabled:bg-slate-300 transition-colors"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl disabled:bg-slate-200 transition-all shadow-lg shadow-blue-600/20 active:scale-95 mt-2"
                 >
-                  {isLoggingIn ? 'Ingresando...' : 'Entrar'}
+                  {isLoggingIn ? 'Verificando...' : 'Iniciar Sesión'}
                 </button>
 
                 <button
                   type="button"
                   disabled={!selectedEmail || isSendingReset}
                   onClick={() => void handlePasswordResetRequest()}
-                  className="w-full text-sm font-medium text-blue-700 hover:text-blue-800 disabled:text-slate-400 transition-colors"
+                  className="w-full text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 disabled:text-slate-300 transition-colors py-2"
                 >
-                  {isSendingReset ? 'Enviando enlace...' : '¿Olvidaste tu contraseña?'}
+                  {isSendingReset ? 'Procesando...' : '¿Olvidaste tu contraseña?'}
                 </button>
+
+                <div className="pt-4 border-t border-slate-100 mt-4">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Accesos rápidos:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => setSelectedEmail('estructuras@metrados.local')}
+                      className="text-[9px] font-black uppercase tracking-tighter bg-slate-100 hover:bg-slate-200 py-2 rounded-lg text-slate-600 transition-colors"
+                    >
+                      Estructuras
+                    </button>
+                    <button 
+                      onClick={() => setSelectedEmail('residente@metrados.local')}
+                      className="text-[9px] font-black uppercase tracking-tighter bg-slate-100 hover:bg-slate-200 py-2 rounded-lg text-slate-600 transition-colors"
+                    >
+                      Residente
+                    </button>
+                  </div>
+                </div>
               </>
             ) : (
               <>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Nueva contraseña
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Nueva Contraseña</label>
                   <input
                     type="password"
                     value={recoveryPassword}
                     onChange={(e) => setRecoveryPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && void handlePasswordUpdate()}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ingrese nueva contraseña"
+                    className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-medium"
+                    placeholder="Mínimo 6 caracteres"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Confirmar contraseña
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Confirmar Contraseña</label>
                   <input
                     type="password"
                     value={recoveryConfirmPassword}
                     onChange={(e) => setRecoveryConfirmPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && void handlePasswordUpdate()}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Repita la nueva contraseña"
+                    className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-medium"
+                    placeholder="Repita la contraseña"
                   />
                 </div>
 
                 {recoveryError && (
-                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                  <div className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 flex gap-2 text-xs font-bold items-center">
+                    <XCircle className="w-4 h-4" />
                     {recoveryError}
                   </div>
                 )}
@@ -928,311 +433,158 @@ function App() {
                 <button
                   disabled={!recoveryPassword || !recoveryConfirmPassword || isUpdatingPassword}
                   onClick={() => void handlePasswordUpdate()}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg disabled:bg-slate-300 transition-colors"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase text-xs tracking-widest py-4 rounded-xl disabled:bg-slate-200 transition-all shadow-lg active:scale-95"
                 >
-                  {isUpdatingPassword ? 'Actualizando...' : 'Guardar nueva contraseña'}
+                  {isUpdatingPassword ? 'Actualizando...' : 'Guardar Nueva Contraseña'}
                 </button>
               </>
             )}
           </div>
-
-          {!recoveryMode && (
-            <div className="mt-6 p-3 bg-slate-100 rounded-lg text-xs text-slate-600">
-              <p className="font-semibold mb-2">Usuarios de prueba:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>estructuras@metrados.local / estructuras123</li>
-                <li>arquitectura@metrados.local / arqui123</li>
-                <li>residente@metrados.local / residente123</li>
-                <li>jefe1@metrados.local / jefe1</li>
-              </ul>
-            </div>
-=======
-          <div className="flex items-center gap-2 text-slate-700 mb-4">
-            <UserCircle2 className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold">Iniciar sesión</h2>
-          </div>
-
-          <div className="mb-4 flex gap-2">
-            <button
-              onClick={() => setIsRegistering(false)}
-              className={`flex-1 py-2 rounded-lg font-semibold ${!isRegistering ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-              Iniciar sesión
-            </button>
-            <button
-              onClick={() => setIsRegistering(true)}
-              className={`flex-1 py-2 rounded-lg font-semibold ${isRegistering ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-              Registrar usuario
-            </button>
-          </div>
-
-          {isRegistering ? (
-            <>
-              <p className="text-sm text-slate-500 mb-3">Registre un usuario para crear metrados por especialidad.</p>
-              <input
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                placeholder="Usuario (username)"
-                value={registerUsername}
-                onChange={(e) => setRegisterUsername(e.target.value)}
-              />
-              <input
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                placeholder="Nombre completo"
-                value={registerNombre}
-                onChange={(e) => setRegisterNombre(e.target.value)}
-              />
-              <input
-                type="password"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                placeholder="Contraseña"
-                value={registerPassword}
-                onChange={(e) => setRegisterPassword(e.target.value)}
-              />
-              <select
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                value={registerTipo}
-                onChange={(e) => setRegisterTipo(e.target.value as UserType)}
-              >
-                <option value="especialidad">Especialidad</option>
-                <option value="jefe_area">Jefe de área</option>
-                <option value="residente">Residente</option>
-              </select>
-              {registerTipo === 'especialidad' && (
-                <select
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                  value={registerEspecialidad}
-                  onChange={(e) => setRegisterEspecialidad(e.target.value)}
-                >
-                  <option value="ESTRUCTURAS">ESTRUCTURAS</option>
-                  <option value="ARQUITECTURA">ARQUITECTURA</option>
-                  <option value="INSTALACIONES SANITARIAS">INSTALACIONES SANITARIAS</option>
-                  <option value="ELÉCTRICAS">ELÉCTRICAS</option>
-                  <option value="ELECTROMECÁNICAS">ELECTROMECÁNICAS</option>
-                  <option value="ARQUEOLOGÍA">ARQUEOLOGÍA</option>
-                  <option value="SEGURIDAD">SEGURIDAD</option>
-                  <option value="OBRAS PROVICIONALES">OBRAS PROVICIONALES</option>
-                  <option value="PLAN DE MANEJO AMBIENTAL">PLAN DE MANEJO AMBIENTAL</option>
-                </select>
-              )}
-              {registerError && <div className="text-xs text-red-600 mb-2">{registerError}</div>}
-              {registerSuccess && <div className="text-xs text-green-600 mb-2">{registerSuccess}</div>}
-              <button
-                onClick={handleRegister}
-                className="w-full bg-green-600 text-white font-semibold py-2 rounded-lg"
-              >
-                Registrar usuario
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-slate-500 mb-4">Usuario o selecciona uno de los ejemplos.</p>
-              <input
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2"
-                placeholder="Username"
-              />
-              <div className="mb-3 text-xs text-slate-500">Ejemplos: residente, especialidad_estructuras, etc.</div>
-              <input
-                type="password"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Contraseña"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-              />
-              {loginError && <div className="text-xs text-red-600 mb-2">{loginError}</div>}
-              <button
-                disabled={!selectedUserId || !loginPassword}
-                onClick={handleLogin}
-                className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg disabled:bg-slate-300"
-              >
-                Entrar
-              </button>
-              <div className="mt-4 text-xs text-slate-500">Usuarios: 8 especialidades + jefes de área + residentes.</div>
-            </>
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-          )}
         </div>
       </div>
     );
   }
 
+  // Dashboard principal
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col gap-6 relative max-w-[1450px] mx-auto">
-<<<<<<< HEAD
-      <header className="flex items-center justify-between px-2 flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg shadow-blue-600/30">
-=======
-
+    <div className="min-h-screen p-4 md:p-6 lg:p-10 flex flex-col gap-8 relative max-w-[1700px] mx-auto bg-slate-50/50">
+      
       {/* Header */}
-      <header className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary text-white p-2.5 rounded-xl shadow-lg shadow-primary/30">
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-            <Building2 className="w-6 h-6" />
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="bg-primary text-white p-3 rounded-2xl shadow-xl shadow-primary/30">
+            <Building2 className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              Metrados Belempampa
+            <h1 className="text-3xl font-black bg-gradient-to-r from-gray-900 via-gray-700 to-gray-500 bg-clip-text text-transparent uppercase tracking-tight">
+              Metrados Belempampa <span className="text-primary/40 text-xl ml-1">v5.1</span>
             </h1>
-<<<<<<< HEAD
-            <p className="text-sm text-gray-500 font-medium">Plataforma de Costos y Presupuestos</p>
+            <p className="text-xs text-gray-400 font-black uppercase tracking-[0.2em]">Data Engineering & Cost Control</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <UserCircle2 className="w-5 h-5 text-slate-600" />
-          <div className="text-sm">
-            <div className="font-semibold text-slate-900">{currentUser.nombre}</div>
-            <div className="text-xs text-slate-500">
-              {currentUser.tipo === 'especialidad'
-                ? 'Especialista'
-                : currentUser.tipo === 'jefe_area'
-                  ? 'Jefe de Área'
-                  : 'Residente'}
+        <div className="flex items-center gap-2">
+          {/* User Profile */}
+          <div className="flex items-center gap-3 bg-white pl-4 pr-2 py-2 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-right">
+              <div className="text-xs font-black text-slate-800 uppercase tracking-tighter">{currentUser.nombre}</div>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                {currentUser.tipo === 'especialidad' ? currentUser.especialidad : currentUser.tipo}
+              </div>
             </div>
+            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
+              <UserCircle2 className="w-6 h-6" />
+            </div>
+            <div className="w-px h-6 bg-slate-100 mx-1" />
+            <button 
+              onClick={handleLogout}
+              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              title="Cerrar Sesión"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="ml-2 text-slate-500 hover:text-red-600 p-1 rounded-md hover:bg-red-50 transition-colors"
-            title="Cerrar sesión"
-=======
-            <p className="text-sm text-gray-500 font-medium">Plataforma Costos y Presupuestos</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-          <UserCircle2 className="w-5 h-5 text-slate-600" />
-          <div className="text-sm text-slate-700">
-            <div className="font-semibold">{currentUser?.name}</div>
-            <div className="text-xs text-slate-500">{currentUser?.type === 'especialidad' ? `Especialidad: ${currentUser.specialty}` : currentUser.type === 'jefe_area' ? 'Jefe de Área' : 'Residente'}</div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="ml-2 text-slate-500 hover:text-slate-800 rounded-md p-1 border border-slate-200 hover:border-slate-300"
-            aria-label="Cerrar sesión"
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
 
-<<<<<<< HEAD
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-          <button
-            onClick={() => setContext({ proyecto: 'hospital' })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-              context.proyecto === 'hospital'
-                ? 'bg-white text-blue-600 shadow-md'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-=======
-        {/* ─── Selector de Especialidad ─── */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
-          <button
-            onClick={() => { setContext({ proyecto: 'hospital' }); actions.setPartidaSeleccionada(null); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${context.proyecto === 'hospital'
-              ? 'bg-white text-blue-700 shadow-md border border-blue-100'
-              : 'text-slate-500 hover:text-slate-700'
+          {/* Project Selector */}
+          <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm ml-2">
+            <button 
+              onClick={() => setContext({ proyecto: 'hospital' })}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                context.proyecto === 'hospital' 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
               }`}
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-          >
-            <Stethoscope className="w-4 h-4" />
-            Hospital
-          </button>
-          <button
-<<<<<<< HEAD
-            onClick={() => setContext({ proyecto: 'contingencia' })}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-              context.proyecto === 'contingencia'
-                ? 'bg-white text-amber-600 shadow-md'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-=======
-            onClick={() => { setContext({ proyecto: 'contingencia' }); actions.setPartidaSeleccionada(null); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${context.proyecto === 'contingencia'
-              ? 'bg-white text-amber-600 shadow-md border border-amber-100'
-              : 'text-slate-500 hover:text-slate-700'
+            >
+              <Stethoscope className="w-4 h-4" />
+              Hospital
+            </button>
+            <button 
+              onClick={() => setContext({ proyecto: 'contingencia' })}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                context.proyecto === 'contingencia' 
+                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
               }`}
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-          >
-            <AlertTriangle className="w-4 h-4" />
-            Contingencia
-          </button>
->>>>>>> main
+            >
+              <AlertTriangle className="w-4 h-4" />
+              Contingencia
+            </button>
+          </div>
         </div>
       </header>
 
-<<<<<<< HEAD
-      {toast && (
-        <div
-          className={`fixed top-6 right-6 z-50 animate-in slide-in-from-top-5 px-4 py-3 rounded-lg shadow-xl font-medium flex items-center gap-2 ${
-            toastType === 'success'
-              ? 'bg-green-500 text-white'
-              : toastType === 'error'
-                ? 'bg-red-500 text-white'
-                : 'bg-blue-500 text-white'
-          }`}
-        >
-          {toastType === 'success' && <span>✓</span>}
-          {toastType === 'error' && <span>✕</span>}
-          {toastType === 'info' && <span>i</span>}
-          {toast}
-        </div>
-      )}
+      {/* Stats Counter & Info */}
+      <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm">
+         <div className="flex items-center gap-8">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Registros</span>
+              <span className="text-xl font-black text-slate-800">{metradosFiltrados.length} <span className="text-sm font-bold text-slate-400 ml-1">metrados</span></span>
+            </div>
+            <div className="w-px h-8 bg-slate-100" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sincronización</span>
+              <span className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                {isSyncing ? (
+                  <span className="flex items-center gap-2 text-blue-600 animate-pulse">
+                    <RotateCcw className="w-3.5 h-3.5 animate-spin" /> Sincronizando datos...
+                  </span>
+                ) : lastSyncTime ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                    Hoy, {new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </>
+                ) : (
+                  'No sincronizado'
+                )}
+              </span>
+            </div>
+         </div>
 
-      <div className="flex items-center justify-between px-2 flex-wrap gap-2">
-        <div className="text-sm text-slate-600">
-          {isSyncing && <span>Sincronizando...</span>}
-          {lastSyncTime && !isSyncing && (
-            <span>Última sincronización: {new Date(lastSyncTime).toLocaleTimeString()}</span>
-          )}
-          <span className="ml-4 font-semibold">{metradosFiltrados.length} metrados registrados</span>
-        </div>
-        <button
-          onClick={() => void handleSaveMetrados()}
-          disabled={isSyncing || metradosFiltrados.length === 0}
-          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
-        >
-          <Save className="w-4 h-4" />
-          {isSyncing ? 'Guardando...' : 'Guardar Metrados'}
-        </button>
+         <div className="flex gap-3">
+            <button 
+              onClick={handleSaveMetrados}
+              disabled={isSyncing || metradosFiltrados.length === 0}
+              className="flex items-center gap-2.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-200 text-white font-black uppercase text-[10px] tracking-widest px-6 py-3 rounded-xl transition-all shadow-lg shadow-green-600/20 active:scale-95"
+            >
+              <Save className="w-4 h-4" />
+              {isSyncing ? 'Guardando...' : 'Nube Supabase'}
+            </button>
+         </div>
       </div>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[70vh]">
-=======
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-5 mt-2 bg-green-500 text-white px-4 py-3 rounded-lg shadow-xl font-medium flex items-center gap-2">
-          <span className="text-xl">✨</span> {toast}
+      <main className="grid grid-cols-1 xl:grid-cols-12 gap-8 min-h-[65vh]">
+        
+        {/* Left Column: Input Form & Search */}
+        <div className="xl:col-span-4 2xl:col-span-3 flex flex-col gap-6">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-6 pb-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1 mb-2 block">Partida Matriz</label>
+              <SearchCombobox
+                partidas={catalogoBuscador}
+                value={state.partidaSeleccionada ? state.partidaSeleccionada.descripcion : ''}
+                onSelect={(p: Partida) => {
+                  actions.setPartidaSeleccionada(p);
+                  actions.setCantidad(1);
+                  actions.setLongitud('');
+                  actions.setAncho('');
+                  actions.setAltura('');
+                }}
+                onAddPartida={() => setIsModalOpen(true)}
+                placeholder="Buscar por código o descripción..."
+              />
+            </div>
+
+            <MetradosForm
+              state={state}
+              actions={actions}
+              onGuardar={handleGuardar}
+              proyecto={context.proyecto}
+            />
+          </div>
         </div>
-      )}
 
-
-<<<<<<< HEAD
-      {/* Main Layout Grid (RECONSTRUIDO: ANCHO COMPLETO) */}
-      <main className="flex-1 min-h-[70vh]">
-        <div className="w-full flex flex-col gap-6">
-=======
-      {/* Main Layout Grid */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[70vh]">
-
-        {/* Left Column: Form */}
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-        <div className="lg:col-span-4 xl:col-span-3">
-          <MetradosForm
-            state={state}
-            actions={actions}
-            onGuardar={handleGuardar}
-            proyecto={context.proyecto}
-          />
-        </div>
-
-<<<<<<< HEAD
-=======
-        {/* Right Column: Table History */}
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
-        <div className="lg:col-span-8 xl:col-span-9 flex flex-col">
->>>>>>> main
+        {/* Right Column: Historical Table */}
+        <div className="xl:col-span-8 2xl:col-span-9 flex flex-col">
           <MetradosTable
             metrados={metradosFiltrados}
             onUpdate={handleUpdateMetrado}
@@ -1241,83 +593,94 @@ function App() {
             proyecto={context.proyecto}
           />
         </div>
-<<<<<<< HEAD
       </main>
+
+      {/* Toast Notification Floating */}
+      {toast && (
+        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-5 duration-300`}>
+          <div className={`
+            px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border font-black text-xs uppercase tracking-widest
+            ${toastType === 'success' ? 'bg-white border-green-100 text-green-600 shadow-green-500/10' : 
+              toastType === 'error' ? 'bg-white border-red-100 text-red-600 shadow-red-500/10' : 
+              'bg-white border-blue-100 text-blue-600 shadow-blue-500/10'}
+          `}>
+             <div className={`p-2 rounded-lg ${
+               toastType === 'success' ? 'bg-green-50' : 
+               toastType === 'error' ? 'bg-red-50' : 'bg-blue-50'
+             }`}>
+               {toastType === 'success' && <CheckCircle2 className="w-5 h-5" />}
+               {toastType === 'error' && <XCircle className="w-5 h-5" />}
+               {toastType === 'info' && <Info className="w-5 h-5" />}
+             </div>
+             {toast}
+          </div>
+        </div>
+      )}
 
       {/* Modal - Nueva Partida Personalizada */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 flex flex-col gap-5 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md p-8 flex flex-col gap-6 animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">Crear Partida Nueva</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">✕</button>
+              <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Crear Partida</h2>
+              <button onClick={() => setIsModalOpen(false)} className="bg-slate-50 p-2 rounded-full text-slate-400 hover:text-slate-600 transition-colors">✕</button>
             </div>
             
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Código / Item</label>
                 <input
                   type="text"
-                  placeholder="Ej: OE.1.1.2.1"
-                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                  placeholder="Ej: OE.2.1.3"
+                  className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 outline-none transition-all placeholder:text-slate-300"
                   value={newPartida.codigo}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPartida({...newPartida, codigo: e.target.value})}
+                  onChange={(e) => setNewPartida({...newPartida, codigo: e.target.value})}
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Descripción</label>
                 <textarea
-                  placeholder="Descripción de la partida..."
+                  placeholder="Nombre de la partida..."
                   rows={3}
-                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all resize-none"
+                  className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 outline-none transition-all resize-none placeholder:text-slate-300"
                   value={newPartida.descripcion}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewPartida({...newPartida, descripcion: e.target.value})}
+                  onChange={(e) => setNewPartida({...newPartida, descripcion: e.target.value})}
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Unidad</label>
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Unidad de Medida</label>
                 <select
-                  className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all appearance-none cursor-pointer"
+                  className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 outline-none transition-all cursor-pointer"
                   value={newPartida.unidad}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewPartida({...newPartida, unidad: e.target.value})}
+                  onChange={(e) => setNewPartida({...newPartida, unidad: e.target.value})}
                 >
                   <option value="und">und (Unidad)</option>
-                  <option value="m">m (Metro Lineal)</option>
-                  <option value="m2">m2 (Metro Cuadrado)</option>
-                  <option value="m3">m3 (Metro Cúbico)</option>
-                  <option value="kg">kg (Kilogramos - Acero)</option>
-                  <option value="pza">pza (Pieza)</option>
+                  <option value="m">m (Metro)</option>
+                  <option value="m2">m2 (Área)</option>
+                  <option value="m3">m3 (Volumen)</option>
+                  <option value="kg">kg (Acero)</option>
                   <option value="glb">glb (Global)</option>
                 </select>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-4">
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 border border-slate-200 transition-all"
+                className="flex-1 px-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 border border-slate-200 transition-all"
               >
-                Cancelar
+                Cerrar
               </button>
               <button 
                 onClick={handleAddCustomPartida}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/95 shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                className="flex-1 px-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest bg-primary text-white hover:bg-primary/95 shadow-xl shadow-primary/20 active:scale-95 transition-all"
               >
-                Guardar Partida
+                Guardar
               </button>
             </div>
           </div>
         </div>
       )}
-=======
-<<<<<<< HEAD
-      </main>
-=======
-
-      </main>
-
->>>>>>> 606008038ae330265422f196bf30875eaa6f9f41
->>>>>>> main
     </div>
   );
 }

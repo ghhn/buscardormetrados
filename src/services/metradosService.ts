@@ -21,7 +21,7 @@ export interface LoadMetradosResponse {
 /**
  * Guarda un lote de metrados en la BD
  */
-export async function saveMetradosToDatabase(
+export async function saveMetrados(
   metrados: Metrado[],
   userId: string,
   proyecto: 'hospital' | 'contingencia',
